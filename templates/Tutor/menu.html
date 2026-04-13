@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menú Tutor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/CSS/tutor.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+</head>
+
+<body>
+    <div class="contenedor">
+
+        <div class="topbar">
+            <h1>Bienvenido {{ nombre }}</h1>
+
+            <div class="menu-superior">
+                <button type="button" class="btn-menu activo" data-seccion="seccionSolicitudes">Solicitudes</button>
+                <button type="button" class="btn-menu" data-seccion="seccionQr">QR</button>
+                <button type="button" class="btn-menu" data-seccion="seccionSeguimiento">Seguimiento</button>
+                <button type="button" class="btn-menu" data-seccion="seccionCarreras">Carreras</button>
+                <button type="button" class="btn-menu" data-seccion="seccionMaterias">Materias</button>
+                <button type="button" class="btn-menu" data-seccion="seccionGrupos">Grupos</button>
+                <button type="button" class="btn-menu" data-seccion="seccionRegistroTutores">Registro de
+                    tutores</button>
+                <button type="button" class="btn-menu" data-seccion="seccionModificarUsuario">Modificar usuario</button>
+            </div>
+        </div>
+
+        <div id="seccionSolicitudes" class="seccion-panel activa">
+            <h3>Solicitudes</h3>
+
+            {% if solicitudes %}
+            {% for s in solicitudes %}
+            <div class="card">
+                <h4>#{{ loop.index + ((pagina - 1) * 10) }}</h4>
+
+                <p><strong>Nombre:</strong> {{ s.nombre_completo }}</p>
+                <p><strong>Correo:</strong> {{ s.correo_temporal }}</p>
+                <p><strong>Tipo:</strong> {{ s.tipo_solicitud }}</p>
+                <p><strong>Estado:</strong> {{ s.estado }}</p>
+
+                {% if s.carrera %}
+                <p><strong>Carrera:</strong> {{ s.carrera }}</p>
+                {% endif %}
+
+                {% if s.estado == "pendiente" %}
+                <div class="acciones">
+                    <form action="{{ url_for('aprobar_solicitud', solicitud_id=s.id) }}" method="post">
+                        <button type="submit">Aprobar</button>
+                    </form>
+
+                    <form action="{{ url_for('rechazar_solicitud', solicitud_id=s.id) }}" method="post">
+                        <button type="submit">Rechazar</button>
+                    </form>
+                </div>
+                {% else %}
+                <button type="button" disabled>Ya registrado</button>
+                {% endif %}
+            </div>
+            {% endfor %}
+            {% else %}
+            <p>No hay solicitudes registradas.</p>
+            {% endif %}
+
+            <div class="paginacion">
+                {% if pagina > 1 %}
+                <a href="{{ url_for('menu_tutor', page=pagina-1) }}">← Anterior</a>
+                {% endif %}
+
+                {% for p in range(1, total_paginas + 1) %}
+                {% if p == pagina %}
+                <span class="activo">{{ p }}</span>
+                {% else %}
+                <a href="{{ url_for('menu_tutor', page=p) }}">{{ p }}</a>
+                {% endif %}
+                {% endfor %}
+
+                {% if pagina < total_paginas %} <a href="{{ url_for('menu_tutor', page=pagina+1) }}">Siguiente →</a>
+                    {% endif %}
+            </div>
+        </div>
+
+        <div id="seccionQr" class="seccion-panel">
+            <h2>Escanear QR del estudiante</h2>
+            <p>El QR debe venir con el formato: matrícula-correo</p>
+            <div class="acciones acciones-qr">
+                <select id="selectCamara" class="select-camara" style="display: none;">
+                    <option value="">Selecciona una cámara</option>
+                </select>
+
+                <button type="button" class="btn btn-escaner" id="btnCargarCamaras">
+                    Cargar cámaras
+                </button>
+
+                <button type="button" class="btn btn-escaner" id="btnIniciarEscaner" style="display: none;">
+                    Iniciar escáner
+                </button>
+
+                <button type="button" class="btn btn-detener" id="btnDetenerEscaner" style="display: none;">
+                    Detener escáner
+                </button>
+            </div>
+
+            <div class="acciones acciones-qr">
+                <button type="button" class="btn btn-escaner" id="btnModoLector">
+                    Usar lector físico
+                </button>
+
+                <div id="contenedorQrManual" style="display: none;">
+                    <input type="text" id="qrKeyboardInput" class="input-qr"
+                        placeholder="Escanea aquí con lector físico o pega el contenido del QR" autocomplete="off">
+                    <button type="button" class="btn btn-escaner" id="btnProcesarQrManual">
+                        Procesar código
+                    </button>
+                </div>
+            </div>
+
+            <div id="reader"></div>
+
+            <div id="resultadoAlumno" style="display: none;">
+                <h3>Información del estudiante</h3>
+                <p><strong>Matrícula:</strong> <span id="resMatricula"></span></p>
+                <p><strong>Nombre:</strong> <span id="resNombre"></span></p>
+                <p><strong>Correo:</strong> <span id="resEmail"></span></p>
+                <p><strong>Carrera:</strong> <span id="resCarrera"></span></p>
+                <p><strong>Correo leído del QR:</strong> <span id="resCorreoQr"></span></p>
+            </div>
+        </div>
+
+        <div id="seccionSeguimiento" class="seccion-panel">
+            <h2>Seguimiento académico</h2>
+
+            {% if grupos %}
+            {% for g in grupos %}
+            <div class="card">
+                <div class="grupo-info">
+                    <p><strong>Materia:</strong> {{ g.materia }}</p>
+                    <p><strong>Carrera:</strong> {{ g.carrera }}</p>
+                    <p><strong>Semestre:</strong> {{ g.semestre }}</p>
+                    <p><strong>Grupo:</strong> {{ g.grupo }}</p>
+                    <p><strong>Turno:</strong> {{ g.turno }}</p>
+                    <p><strong>Periodo:</strong> {{ g.periodo }}</p>
+                </div>
+
+                <div class="parciales">
+                    <a class="btn btn-parcial" href="{{ url_for('abrir_seguimiento', grupo_id=g.id, parcial='1') }}">1er
+                        parcial</a>
+                    <a class="btn btn-parcial" href="{{ url_for('abrir_seguimiento', grupo_id=g.id, parcial='2') }}">2do
+                        parcial</a>
+                    <a class="btn btn-parcial" href="{{ url_for('abrir_seguimiento', grupo_id=g.id, parcial='3') }}">3er
+                        parcial</a>
+                    <a class="btn btn-parcial" href="{{ url_for('abrir_seguimiento', grupo_id=g.id, parcial='4') }}">4to
+                        parcial</a>
+                    <a class="btn btn-parcial"
+                        href="{{ url_for('abrir_seguimiento', grupo_id=g.id, parcial='S') }}">Semestral</a>
+                </div>
+
+                {% if g.alumnos %}
+                <div class="lista-admin">
+                    <h4>Alumnos del grupo</h4>
+                    {% for a in g.alumnos %}
+                    <div class="card tarjeta-interna">
+                        <p><strong>Matrícula:</strong> {{ a.matricula }}</p>
+                        <p><strong>Nombre:</strong> {{ a.nombre_completo }}</p>
+                        <p><strong>Correo:</strong> {{ a.email }}</p>
+
+                        <div class="acciones">
+                            <form action="{{ url_for('quitar_alumno_grupo') }}" method="post">
+                                <input type="hidden" name="grupo_id" value="{{ g.id }}">
+                                <input type="hidden" name="alumno_matricula" value="{{ a.matricula }}">
+                                <button type="submit" class="btn btn-rechazar">Quitar del grupo</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p><strong>Alumnos del grupo:</strong> Aún no tiene alumnos inscritos.</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+            {% else %}
+            <p>No tienes grupos asignados actualmente.</p>
+            {% endif %}
+        </div>
+
+        <div id="seccionCarreras" class="seccion-panel">
+            <h2>Agregar carrera</h2>
+
+            <form action="{{ url_for('agregar_carrera') }}" method="post" class="form-admin">
+                <div class="grid-form una-columna">
+                    <div class="campo">
+                        <label for="nombre_carrera">Nombre de la carrera</label>
+                        <input type="text" id="nombre_carrera" name="nombre"
+                            placeholder="Ej. Ingeniería en Sistemas Computacionales" required>
+                    </div>
+                </div>
+
+                <div class="acciones">
+                    <button type="submit" class="btn btn-parcial">Guardar carrera</button>
+                </div>
+            </form>
+
+            {% if carreras %}
+            <div class="lista-admin">
+                <h3>Carreras registradas</h3>
+                {% for c in carreras %}
+                <div class="card">
+                    <p><strong>Nombre:</strong> {{ c.nombre }}</p>
+                    <p><strong>Estatus:</strong> {{ 'Activa' if c.activa == 1 else 'Inactiva' }}</p>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <div id="seccionMaterias" class="seccion-panel">
+            <h2>Agregar materia</h2>
+
+            <form action="{{ url_for('agregar_materia') }}" method="post" class="form-admin">
+                <div class="grid-form">
+                    <div class="campo">
+                        <label for="materia_carrera_id">Carrera</label>
+                        <select id="materia_carrera_id" name="carrera_id" required>
+                            <option value="">Selecciona una carrera</option>
+                            {% for c in carreras %}
+                            <option value="{{ c.id }}">{{ c.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="campo">
+                        <label for="materia_nombre">Nombre de la materia</label>
+                        <input type="text" id="materia_nombre" name="nombre" placeholder="Ej. Programación Segura"
+                            required>
+                    </div>
+
+                    <div class="campo">
+                        <label for="materia_semestre">Semestre</label>
+                        <input type="text" id="materia_semestre" name="semestre" placeholder="Ej. 1, 2, 3..." required>
+                    </div>
+                </div>
+
+                <div class="acciones">
+                    <button type="submit" class="btn btn-aprobar">Guardar materia</button>
+                </div>
+            </form>
+
+            {% if materias %}
+            <div class="lista-admin">
+                <h3>Materias registradas</h3>
+                {% for m in materias %}
+                <div class="card">
+                    <p><strong>Materia:</strong> {{ m.nombre }}</p>
+                    <p><strong>Carrera:</strong> {{ m.carrera }}</p>
+                    <p><strong>Semestre:</strong> {{ m.semestre }}</p>
+                    <p><strong>Estatus:</strong> {{ 'Activa' if m.activa == 1 else 'Inactiva' }}</p>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p>No hay materias registradas todavía.</p>
+            {% endif %}
+        </div>
+
+        <div id="seccionGrupos" class="seccion-panel">
+            <h2>Gestión de grupos</h2>
+
+            <div class="subseccion-admin">
+                <h3>Crear grupo</h3>
+                
+
+                <form action="{{ url_for('crear_grupo') }}" method="post" class="form-admin">
+                    <div class="grid-form">
+                        <div class="campo">
+                            <label for="grupo_carrera_id">Carrera</label>
+                            <select id="grupo_carrera_id" name="carrera_id" required>
+                                <option value="">Selecciona una carrera</option>
+                                {% for c in carreras %}
+                                <option value="{{ c.id }}">{{ c.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="campo">
+                            <label for="grupo_materia_id">Materia</label>
+                            <select id="grupo_materia_id" name="materia_id" required>
+                                <option value="">Selecciona una materia</option>
+                                {% for m in materias %}
+                                <option value="{{ m.id }}" data-carrera="{{ m.carrera_id }}">{{ m.nombre }} - Sem. {{
+                                    m.semestre }} - {{ m.carrera }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="campo">
+                            <label for="grupo_semestre">Semestre</label>
+                            <input type="text" id="grupo_semestre" name="semestre" placeholder="Ej. 1, 2, 3..."
+                                required>
+                        </div>
+
+                        <div class="campo">
+                            <label for="grupo_nombre">Grupo</label>
+                            <input type="text" id="grupo_nombre" name="grupo" placeholder="Ej. A" required>
+                        </div>
+
+                        <div class="campo">
+                            <label for="grupo_turno">Turno</label>
+                            <input type="text" id="grupo_turno" name="turno" placeholder="Ej. Matutino" required>
+                        </div>
+
+                        <div class="campo">
+                            <label for="grupo_periodo">Periodo</label>
+                            <input type="text" id="grupo_periodo" name="periodo" placeholder="Ej. ENE-JUN 2026"
+                                required>
+                        </div>
+                    </div>
+
+                    <div class="acciones">
+                        <button type="submit" class="btn btn-aprobar">Crear grupo</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="subseccion-admin">
+                <h3>Grupos sin tutor</h3>
+
+                {% if grupos_sin_tutor %}
+                {% for g in grupos_sin_tutor %}
+                <div class="card">
+                    <p><strong>Materia:</strong> {{ g.materia }}</p>
+                    <p><strong>Carrera:</strong> {{ g.carrera }}</p>
+                    <p><strong>Semestre:</strong> {{ g.semestre }}</p>
+                    <p><strong>Grupo:</strong> {{ g.grupo }}</p>
+                    <p><strong>Turno:</strong> {{ g.turno }}</p>
+                    <p><strong>Periodo:</strong> {{ g.periodo }}</p>
+
+                    <div class="acciones">
+                        <form action="{{ url_for('asignarme_grupo', grupo_id=g.id) }}" method="post">
+                            <button type="submit" class="btn btn-parcial">Asignarme</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <p>No hay grupos sin tutor.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div id="seccionRegistroTutores" class="seccion-panel">
+            <h2>Registro de tutores / laboratoristas</h2>
+
+            <form action="{{ url_for('registrar_personal') }}" method="post" class="form-admin">
+                <div class="grid-form">
+                    <div class="campo">
+                        <label for="nombre_personal">Nombre</label>
+                        <input type="text" id="nombre_personal" name="nombre" required>
+                    </div>
+
+                    <div class="campo">
+                        <label for="ap_paterno_personal">Apellido paterno</label>
+                        <input type="text" id="ap_paterno_personal" name="ap_paterno" required>
+                    </div>
+
+                    <div class="campo">
+                        <label for="ap_materno_personal">Apellido materno</label>
+                        <input type="text" id="ap_materno_personal" name="ap_materno" required>
+                    </div>
+
+                    <div class="campo">
+                        <label for="correo_temporal_personal">Correo temporal</label>
+                        <input type="email" id="correo_temporal_personal" name="correo_temporal" required>
+                    </div>
+
+                    <div class="campo">
+                        <label for="password_personal">Contraseña</label>
+                        <input type="password" id="password_personal" name="password" required>
+                    </div>
+
+                    <div class="campo">
+                        <label for="tipo_personal">Tipo</label>
+                        <select id="tipo_personal" name="tipo" required>
+                            <option value="">Selecciona</option>
+                            <option value="tutor">Tutor</option>
+                            <option value="laboratorista">Laboratorista</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="acciones">
+                    <button type="submit" class="btn btn-aprobar">Registrar personal</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="seccionModificarUsuario" class="seccion-panel">
+            <h2>Modificar usuario</h2>
+
+            <form action="{{ url_for('modificar_mi_usuario') }}" method="post" class="form-admin">
+                <div class="grid-form">
+                    <div class="campo">
+                        <label for="matricula_mod">Matrícula</label>
+                        <input type="text" id="matricula_mod"
+                            value="{{ datos_usuario.matricula if datos_usuario else '' }}" readonly>
+                    </div>
+
+                    <div class="campo">
+                        <label for="nombre_mod">Nombre</label>
+                        <input type="text" id="nombre_mod" value="{{ datos_usuario.nombre if datos_usuario else '' }}"
+                            readonly>
+                    </div>
+
+                    <div class="campo">
+                        <label for="ap_paterno_mod">Apellido paterno</label>
+                        <input type="text" id="ap_paterno_mod"
+                            value="{{ datos_usuario.ap_paterno if datos_usuario else '' }}" readonly>
+                    </div>
+
+                    <div class="campo">
+                        <label for="ap_materno_mod">Apellido materno</label>
+                        <input type="text" id="ap_materno_mod"
+                            value="{{ datos_usuario.ap_materno if datos_usuario else '' }}" readonly>
+                    </div>
+
+                    <div class="campo">
+                        <label for="email_mod">Correo institucional</label>
+                        <input type="email" id="email_mod" value="{{ datos_usuario.email if datos_usuario else '' }}"
+                            readonly>
+                    </div>
+
+                    <div class="campo">
+                        <label for="correo_temporal_mod">Correo temporal</label>
+                        <input type="email" id="correo_temporal_mod"
+                            value="{{ datos_usuario.correo_temporal if datos_usuario else '' }}" readonly>
+                    </div>
+
+                    <div class="campo">
+                        <label for="tipo_mod">Tipo</label>
+                        <input type="text" id="tipo_mod" value="{{ datos_usuario.tipo if datos_usuario else '' }}"
+                            readonly>
+                    </div>
+
+                    <div class="campo">
+                        <label for="estado_mod">Estado</label>
+                        <input type="text" id="estado_mod"
+                            value="{{ 'Activo' if datos_usuario and datos_usuario.activo == 1 else 'Inactivo' }}"
+                            readonly>
+                    </div>
+
+                    <div class="campo campo-completo">
+                        <label for="nueva_password">Nueva contraseña</label>
+                        <input type="password" id="nueva_password" name="nueva_password"
+                            placeholder="Ingresa la nueva contraseña" required>
+                    </div>
+
+                    <div class="campo campo-completo">
+                        <label for="confirmar_password">Confirmar nueva contraseña</label>
+                        <input type="password" id="confirmar_password" name="confirmar_password"
+                            placeholder="Confirma la nueva contraseña" required>
+                    </div>
+                </div>
+
+                <div class="acciones">
+                    <button type="submit" class="btn btn-parcial">Cambiar contraseña</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="footer-acciones">
+            <a class="btn btn-cerrar" href="{{ url_for('cerrar_sesion') }}">Cerrar sesión</a>
+        </div>
+
+    </div>
+
+    <script src="{{ url_for('static', filename='assets/JS/alertas.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/JS/tutor.js') }}"></script>
+</body>
+
+</html>

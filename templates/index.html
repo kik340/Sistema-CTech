@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inicio</title>
+    <link rel="stylesheet" href="{{url_for('static', filename='assets/CSS/styles.css')}}">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+
+<body>
+
+    <div class="contenedor">
+        <div class="panel panel-login" id="panelLogin">
+            <h2>Iniciar Sesión</h2>
+            <form action="/verificar_usuario" method="post">
+                <label>Matrícula:</label>
+                <input type="text" name="matricula" placeholder="202631234" maxlength="9">
+
+                <label>Contraseña:</label>
+                <div class="input-pass">
+                    <input type="password" name="password" placeholder="********">
+                    <button type="button" class="btn-ojo">
+                        <img src="{{ url_for('static', filename='resources/ojo-cerrado.png') }}"
+                            alt="Mostrar contraseña">
+                    </button>
+                </div>
+
+                <button type="submit" class="btn">Entrar</button>
+
+                <p>¿No tienes cuenta?
+                    <button type="button" id="btnRegistro" class="linkBtn">Solicitar registro</button>
+                </p>
+            </form>
+        </div>
+
+        <div class="panel panel-register" id="panelRegister">
+            <h2>Solicitar Registro</h2>
+
+            <form action="/solicitar_registro" method="post">
+                <label>Nombre:</label>
+                <input type="text" name="nombre" placeholder="Tu nombre">
+
+                <label>Apellido paterno:</label>
+                <input type="text" name="ap_paterno" placeholder="Apellido paterno">
+
+                <label>Apellido materno:</label>
+                <input type="text" name="ap_materno" placeholder="Apellido materno">
+
+                <label>Correo temporal:</label>
+                <input type="email" name="correo_temporal" placeholder="tu_correo@gmail.com">
+
+                <label>Contraseña:</label>
+                <div class="input-pass">
+                    <input type="password" name="password" placeholder="********">
+                    <button type="button" class="btn-ojo">
+                        <img src="{{ url_for('static', filename='resources/ojo-cerrado.png') }}"
+                            alt="Mostrar contraseña">
+                    </button>
+                </div>
+                <select name="tipo_solicitud" id="tipo_solicitud">
+                    <option value="alumno">Alumno</option>
+                    <option value="externo">Externo</option>
+                </select>
+
+
+                <div id="bloqueCarrera">
+                    <label>Carrera:</label>
+                    <select name="carrera_id" id="carrera_id">
+                        <option value="">Selecciona una carrera</option>
+                        {% for carrera in carreras %}
+                        <option value="{{ carrera.id }}">{{ carrera.nombre }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <label>Año de ingreso:</label>
+                    <input type="number" name="anio_ingreso" id="anio_ingreso" placeholder="Ej. 2023" min="2000"
+                        max="2099">
+                </div>
+                <div id="bloqueMotivo" class="campo-oculto">
+                    <label>Motivo de visita:</label>
+                    <input type="text" name="motivo" id="motivo" placeholder="Motivo del acceso temporal">
+                </div>
+                <button type="submit" class="btn">Enviar solicitud</button>
+
+                <p>¿Ya tienes cuenta?
+                    <button type="button" id="btnLogin" class="linkBtn">Iniciar Sesión</button>
+                </p>
+            </form>
+        </div>
+
+        <div class="panel-rojo mover-derecha" id="panelRojo">
+            <div class="logo-circulo">
+                <img src="{{url_for('static', filename='resources/logo.png')}}" alt="Logo ITSA">
+            </div>
+            <h1>Instituto Tecnológico Superior de Atlixco</h1>
+        </div>
+    </div>
+
+    <script src="{{url_for('static', filename='assets/JS/alertas.js')}}"></script>
+    <script src="{{url_for('static', filename='assets/JS/script.js')}}"></script>
+</body>
+
+</html>

@@ -1,0 +1,267 @@
+* {
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    margin: 0;
+    background: #f4f4f4;
+    padding: 20px;
+}
+
+h1,
+h2,
+h3,
+p {
+    margin-top: 0;
+}
+
+.contenedor {
+    max-width: 1100px;
+    margin: auto;
+}
+
+.topbar {
+    background: white;
+    border-radius: 14px;
+    padding: 15px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    margin-bottom: 20px;
+}
+
+.topbar h1 {
+    margin-bottom: 15px;
+}
+
+.menu-superior {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.btn-menu {
+    border: none;
+    background: #cc0000;
+    color: white;
+    padding: 10px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.25s ease;
+}
+
+.btn-menu:hover {
+    background: #990000;
+}
+
+.btn-menu.activo {
+    background: #111;
+}
+
+.seccion-panel {
+    display: none;
+    background: white;
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    margin-bottom: 20px;
+}
+
+.seccion-panel.activa {
+    display: block;
+}
+
+.form-admin {
+    margin-top: 10px;
+}
+
+.grid-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 15px;
+}
+
+.campo {
+    display: flex;
+    flex-direction: column;
+}
+
+.campo label {
+    margin-bottom: 6px;
+    font-weight: bold;
+}
+
+.campo input,
+.campo select {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 14px;
+    background: white;
+}
+
+.lista-admin {
+    margin-top: 20px;
+}
+
+.oculto {
+    display: none !important;
+}
+
+.select-camara {
+    min-width: 220px;
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background: white;
+    font-size: 14px;
+}
+
+.acciones-qr {
+    align-items: center;
+}
+
+
+
+@media (max-width: 700px) {
+    .grid-form {
+        grid-template-columns: 1fr;
+    }
+
+    .select-camara {
+        width: 100%;
+        min-width: 100%;
+    }
+}
+
+.card {
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin-bottom: 12px;
+    border-radius: 10px;
+    background: #fafafa;
+}
+
+.acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.acciones form {
+    display: inline-block;
+}
+
+.btn {
+    padding: 10px 14px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    color: white;
+    font-weight: bold;
+    text-decoration: none;
+    display: inline-block;
+    transition: 0.25s ease;
+}
+
+.btn:hover {
+    transform: scale(1.03);
+}
+
+.btn-aprobar {
+    background: #198754;
+}
+
+.btn-rechazar {
+    background: #dc3545;
+}
+
+.btn-escaner {
+    background: #0d6efd;
+}
+
+.btn-detener {
+    background: #6c757d;
+}
+
+.btn-parcial {
+    background: #cc0000;
+}
+
+.btn-cerrar {
+    background: #111;
+}
+
+#reader {
+    width: 320px;
+    max-width: 100%;
+    margin-top: 15px;
+}
+
+#resultadoAlumno {
+    margin-top: 20px;
+    padding: 15px;
+    border: 1px solid #aaa;
+    border-radius: 10px;
+    display: none;
+    background: #fff;
+}
+
+.grupo-info {
+    margin-bottom: 10px;
+}
+
+.parciales {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.footer-acciones {
+    margin-top: 10px;
+}
+.paginacion {
+    margin-top: 20px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.paginacion a,
+.paginacion span {
+    padding: 6px 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    background: #222;
+    color: white;
+}
+
+.paginacion .activo {
+    background: red;
+    font-weight: bold;
+}
+
+@media (max-width: 700px) {
+    body {
+        padding: 12px;
+    }
+
+    .topbar,
+    .seccion-panel {
+        padding: 15px;
+    }
+
+    .btn-menu,
+    .btn {
+        width: 100%;
+        text-align: center;
+    }
+
+    .menu-superior,
+    .acciones,
+    .parciales {
+        flex-direction: column;
+    }
+}

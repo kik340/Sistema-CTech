@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seguimiento Académico</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #f4f4f4;
+        }
+
+        .contenedor {
+            max-width: 1400px;
+            margin: auto;
+            background: white;
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .tabla-wrap {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            min-width: 1600px;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+            vertical-align: top;
+        }
+
+        th {
+            background: #cc0000;
+            color: white;
+            font-size: 14px;
+        }
+
+        td input[type="text"],
+        td input[type="number"],
+        td textarea {
+            width: 100%;
+            padding: 6px;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .acciones {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 14px;
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+            cursor: pointer;
+            color: white;
+            font-weight: bold;
+        }
+
+        .btn-guardar {
+            background: #198754;
+        }
+
+        .btn-volver {
+            background: #111;
+        }
+
+        .btn-pdf {
+            background: #b30000;
+        }
+
+        .btn-excel {
+            background: #1d6f42;
+        }
+
+        .bloque-observaciones {
+            margin-top: 20px;
+        }
+
+        .bloque-observaciones textarea {
+            width: 100%;
+            padding: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="contenedor">
+        <h1>Seguimiento académico</h1>
+        <p><strong>Grupo ID:</strong> {{ seguimiento.grupo_id }}</p>
+        <p><strong>Parcial:</strong> {{ seguimiento.parcial }}</p>
+        <p><strong>Total estudiantes:</strong> {{ seguimiento.total_estudiantes }}</p>
+
+        <form action="{{ url_for('guardar_seguimiento') }}" method="post">
+            <input type="hidden" name="seguimiento_id" value="{{ seguimiento.id }}">
+
+            <div class="tabla-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Matrícula</th>
+                            <th>Nombre</th>
+                            <th>Asistencia</th>
+                            <th>Canalización</th>
+                            <th>Prob. económicos</th>
+                            <th>Prob. salud</th>
+                            <th>Prob. emocionales</th>
+                            <th>Prob. familiares</th>
+                            <th>Prob. académicos</th>
+                            <th>Beca JCF</th>
+                            <th>Beca manutención</th>
+                            <th>Beca JMF</th>
+                            <th>Otra beca</th>
+                            <th>Apoyo psicológico</th>
+                            <th>Apoyo médico</th>
+                            <th>Otro apoyo</th>
+                            <th>Promedio</th>
+                            <th>Reprobadas</th>
+                            <th>Aprobado</th>
+                            <th>Posible deserción</th>
+                            <th>Comentario</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for a in alumnos %}
+                        {% set d = detalle_map.get(a.matricula) %}
+                        <tr>
+                            <td>
+                                {{ a.matricula }}
+                                <input type="hidden" name="alumno_matricula" value="{{ a.matricula }}">
+                            </td>
+                    
+                            <td>
+                                {{ a.nombre_completo }}
+                                <input type="hidden" name="nombre_{{ a.matricula }}" value="{{ a.nombre_completo }}">
+                            </td>
+
+                            <td><input type="checkbox" name="asistencia_{{ a.matricula }}" value="1" {% if d and
+                                    d.asistencia==1 %}checked{% endif %}></td>
+                            <td><input type="checkbox" name="canalizacion_{{ a.matricula }}" value="1" {% if d and
+                                    d.canalizacion_tutoria_individual==1 %}checked{% endif %}></td>
+
+                            <td><input type="checkbox" name="prob_economicos_{{ a.matricula }}" value="1" {% if d and
+                                    d.problemas_economicos==1 %}checked{% endif %}></td>
+                            <td><input type="checkbox" name="prob_salud_{{ a.matricula }}" value="1" {% if d and
+                                    d.problemas_salud==1 %}checked{% endif %}></td>
+                            <td><input type="checkbox" name="prob_emocionales_{{ a.matricula }}" value="1" {% if d and
+                                    d.problemas_emocionales==1 %}checked{% endif %}></td>
+                            <td><input type="checkbox" name="prob_familiares_{{ a.matricula }}" value="1" {% if d and
+                                    d.problemas_familiares==1 %}checked{% endif %}></td>
+                            <td><input type="checkbox" name="prob_academicos_{{ a.matricula }}" value="1" {% if d and
+                                    d.problemas_academicos==1 %}checked{% endif %}></td>
+
+                            <td><input type="checkbox" name="beca_jcf_{{ a.matricula }}" value="1" {% if d and
+                                    d.beca_jcf==1 %}checked{% endif %}></td>
+                            <td><input type="checkbox" name="beca_manutencion_{{ a.matricula }}" value="1" {% if d and
+                                    d.beca_manutencion==1 %}checked{% endif %}></td>
+                            <td><input type="checkbox" name="beca_jmf_{{ a.matricula }}" value="1" {% if d and
+                                    d.beca_jmf==1 %}checked{% endif %}></td>
+                            <td><input type="checkbox" name="beca_otro_{{ a.matricula }}" value="1" {% if d and
+                                    d.beca_otro==1 %}checked{% endif %}></td>
+
+                            <td><input type="checkbox" name="apoyo_psicologico_{{ a.matricula }}" value="1" {% if d and
+                                    d.apoyo_psicologico==1 %}checked{% endif %}></td>
+                            <td><input type="checkbox" name="apoyo_medico_{{ a.matricula }}" value="1" {% if d and
+                                    d.apoyo_medico==1 %}checked{% endif %}></td>
+                            <td><input type="checkbox" name="apoyo_otro_{{ a.matricula }}" value="1" {% if d and
+                                    d.apoyo_otro==1 %}checked{% endif %}></td>
+
+                            <td><input type="text" name="promedio_{{ a.matricula }}"
+                                    value="{{ d.promedio if d and d.promedio is not none else '' }}"></td>
+                            <td><input type="number" name="reprobadas_{{ a.matricula }}"
+                                    value="{{ d.materias_reprobadas if d else 0 }}" min="0"></td>
+                            <td><input type="checkbox" name="aprobado_{{ a.matricula }}" value="1" {% if d and
+                                    d.estatus_aprobado==1 %}checked{% endif %}></td>
+                            <td><input type="checkbox" name="desercion_{{ a.matricula }}" value="1" {% if d and
+                                    d.posible_desercion==1 %}checked{% endif %}></td>
+                            <td><textarea
+                                    name="comentario_{{ a.matricula }}">{{ d.comentario if d and d.comentario else '' }}</textarea>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="bloque-observaciones">
+                <label for="observaciones"><strong>Observaciones generales</strong></label>
+                <textarea id="observaciones"
+                    name="observaciones">{{ seguimiento.observaciones if seguimiento.observaciones else '' }}</textarea>
+            </div>
+
+            <div class="acciones">
+                <button type="submit" class="btn btn-guardar">Guardar seguimiento</button>
+
+                <button type="submit" class="btn btn-guardar"
+                    formaction="{{ url_for('exportar_seguimiento_pdf', seguimiento_id=seguimiento.id) }}"
+                    formmethod="post">
+                    Exportar PDF
+                </button>
+
+                <button type="submit" class="btn btn-guardar"
+                    formaction="{{ url_for('exportar_seguimiento_excel', seguimiento_id=seguimiento.id) }}"
+                    formmethod="post">
+                    Exportar Excel
+                </button>
+                <input type="hidden" name="grupo_id" value="{{ seguimiento.grupo_id }}">
+                <input type="hidden" name="parcial" value="{{ seguimiento.parcial }}">
+                <a href="{{ url_for('menu_tutor') }}" class="btn btn-volver">Volver al menú</a>
+            </div>
+
+            <p style="margin-top:12px; color:#555;">Para que el PDF y el Excel incluyan los cambios más recientes,
+                primero guarda el seguimiento.</p>
+        </form>
+    </div>
+</body>
+
+</html>

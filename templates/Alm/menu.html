@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menú Alumno</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css">
+    <link rel="stylesheet" href="{{url_for('static', filename='assets/CSS/alumno.css')}}">
+</head>
+
+<body>
+    <div class="container">
+
+        <button class="btn-menu-movil" id="btnMenuMovil">☰ Menú</button>
+
+        <div class="contenedor-alumno">
+            <div class="panel panel-qr">
+                <h2>Código QR</h2>
+
+                <div class="datos">
+                    <strong>Nombre:</strong> {{ nombre }}<br>
+                    <strong>Matrícula:</strong> {{ matricula }}<br>
+                    <strong>Correo:</strong> {{ email }}
+                </div>
+
+                <div class="qr-box">
+                    <img src="{{ url_for('generar_qr_alumno') }}" alt="QR del alumno">
+                </div>
+            </div>
+
+            <section class="seccion seccion-materias">
+                <div class="encabezado-seccion">
+                    <h2>Materias y grupos disponibles</h2>
+                    <p>Aquí solo se muestran grupos relacionados con tu carrera.</p>
+                </div>
+
+                {% if grupos_disponibles %}
+                <div class="grid-materias">
+                    {% for g in grupos_disponibles %}
+                    <article class="card card-materia {{ 'card-inscrito' if g.inscrito == 1 else '' }}">
+                        <div class="card-materia-top">
+                            <span class="badge-semestre">Semestre {{ g.semestre }}</span>
+                            <span class="badge-grupo">Grupo {{ g.grupo }}</span>
+                        </div>
+
+                        <h3>{{ g.materia }}</h3>
+
+                        <div class="detalle-materia">
+                            <p><strong>Carrera:</strong> {{ g.carrera }}</p>
+                            <p><strong>Turno:</strong> {{ g.turno }}</p>
+                            <p><strong>Periodo:</strong> {{ g.periodo }}</p>
+                        </div>
+
+                        <form action="{{ url_for('inscribirme_grupo', grupo_id=g.id) }}" method="post">
+                            <button type="submit" class="btn-inscribirme" {% if g.inscrito == 1 %}disabled{% endif %}>
+                                {% if g.inscrito == 1 %}Ya inscrito{% else %}Inscribirme{% endif %}
+                            </button>
+                        </form>
+                    </article>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="card aviso-vacio">
+                    <p>No hay grupos disponibles para tu carrera en este momento.</p>
+                </div>
+                {% endif %}
+            </section>
+
+            <aside class="panel panel-menu" id="sidebarAlumno">
+                <button class="cerrar-sidebar" id="cerrarSidebar">×</button>
+
+                <h2>Menú del Alumno</h2>
+
+                <div class="perfil">
+                    <img src="{{ foto }}" alt="Foto de perfil" id="fotoPerfil">
+                    <p>{{ nombre }}</p>
+                </div>
+
+                <div class="menu-opciones">
+                    <a href="{{ url_for('descargar_qr_pdf') }}">Generar QR</a>
+
+                    <div class="bloque-subida">
+                        <input type="file" id="inputFoto" accept=".png,.jpg,.jpeg,.webp" hidden>
+                        <button type="button" id="btnSeleccionarImagen">Subir imagen</button>
+                    </div>
+
+                    <div class="resumen-materias-menu">
+                        <h3>Materias disponibles</h3>
+                        {% if grupos_disponibles %}
+                        <div class="lista-resumen-materias">
+                            {% for g in grupos_disponibles %}
+                            <div class="item-resumen-materia {{ 'item-inscrito' if g.inscrito == 1 else '' }}">
+                                <strong>{{ g.materia }}</strong>
+                                <span>Grupo {{ g.grupo }} · Semestre {{ g.semestre }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="texto-vacio-menu">Todavía no hay materias disponibles para tu carrera.</p>
+                        {% endif %}
+                    </div>
+
+                    <a href="{{ url_for('cerrar_sesion') }}">Cerrar sesión</a>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <div class="overlay-sidebar" id="overlaySidebar"></div>
+
+    <div class="modal-recorte" id="modalRecorte">
+        <div class="modal-contenido">
+            <button class="cerrar-modal" id="cerrarModalRecorte">×</button>
+            <h3>Recortar imagen</h3>
+
+            <div class="contenedor-recorte">
+                <img id="imagenRecorte" alt="Imagen para recortar">
+            </div>
+
+            <div class="acciones-recorte">
+                <button type="button" id="btnCancelarRecorte">Cancelar</button>
+                <button type="button" id="btnGuardarRecorte">Guardar imagen</button>
+            </div>
+        </div>
+        <div id="seccionModificarUsuario" class="seccion-panel">
+    <h2>Modificar usuario</h2>
+
+    <form action="{{ url_for('modificar_mi_usuario') }}" method="post" class="form-admin">
+        <div class="grid-form">
+            <div class="campo">
+                <label for="matricula_mod">Matrícula</label>
+                <input type="text" id="matricula_mod" value="{{ datos_usuario.matricula if datos_usuario else '' }}" readonly>
+            </div>
+
+            <div class="campo">
+                <label for="nombre_mod">Nombre</label>
+                <input type="text" id="nombre_mod" value="{{ datos_usuario.nombre if datos_usuario else '' }}" readonly>
+            </div>
+
+            <div class="campo">
+                <label for="ap_paterno_mod">Apellido paterno</label>
+                <input type="text" id="ap_paterno_mod" value="{{ datos_usuario.ap_paterno if datos_usuario else '' }}" readonly>
+            </div>
+
+            <div class="campo">
+                <label for="ap_materno_mod">Apellido materno</label>
+                <input type="text" id="ap_materno_mod" value="{{ datos_usuario.ap_materno if datos_usuario else '' }}" readonly>
+            </div>
+
+            <div class="campo">
+                <label for="email_mod">Correo institucional</label>
+                <input type="email" id="email_mod" value="{{ datos_usuario.email if datos_usuario else '' }}" readonly>
+            </div>
+
+            <div class="campo">
+                <label for="tipo_mod">Tipo</label>
+                <input type="text" id="tipo_mod" value="{{ datos_usuario.tipo if datos_usuario else '' }}" readonly>
+            </div>
+
+            <div class="campo campo-completo">
+                <label for="nueva_password">Nueva contraseña</label>
+                <input type="password" id="nueva_password" name="nueva_password" placeholder="Ingresa la nueva contraseña" required>
+            </div>
+
+            <div class="campo campo-completo">
+                <label for="confirmar_password">Confirmar nueva contraseña</label>
+                <input type="password" id="confirmar_password" name="confirmar_password" placeholder="Confirma la nueva contraseña" required>
+            </div>
+        </div>
+
+        <div class="acciones">
+            <button type="submit" class="btn btn-parcial">Cambiar contraseña</button>
+        </div>
+    </form>
+</div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
+    <script src="{{url_for('static', filename='assets/JS/alm.js')}}"></script>
+</body>
+
+</html>
