@@ -1,13 +1,16 @@
 * {
     box-sizing: border-box;
-    font-family: Arial, sans-serif;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
 body {
     margin: 0;
     min-height: 100vh;
-    background-image: linear-gradient(to right top, #ff0000, #f00a0b, #e11213, #d11818, #c21c1c, #b71c1c, #ab1c1c, #a01c1c, #961919, #8c1616, #821414, #781111);
-    color: white;
+    background:
+        linear-gradient(rgba(0, 16, 38, 0.55), rgba(0, 40, 85, 0.65)),
+        url('../../resources/patron.png') left center/contain no-repeat;
+    background-color: #001026;
+    color: #ffffff;
     padding: 20px;
 }
 
@@ -24,13 +27,13 @@ body {
     margin-bottom: 14px;
     padding: 14px;
     border: none;
-    border-radius: 14px;
-    background: #d4a017;
-    color: black;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #003B5C 0%, #00B5E2 100%);
+    color: #ffffff;
     font-weight: bold;
     font-size: 16px;
     cursor: pointer;
-   
+    box-shadow: 0 4px 12px rgba(0, 181, 226, 0.25);
 }
 
 .contenedor-alumno {
@@ -43,10 +46,12 @@ body {
 .panel,
 .seccion,
 .card {
-    background: rgba(0, 0, 0, 0.72);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(0, 31, 55, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 181, 226, 0.2);
     border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
 }
 
 .panel,
@@ -58,6 +63,7 @@ body {
 .seccion h2,
 .card h3 {
     margin-top: 0;
+    color: #ffffff;
 }
 
 .panel-qr {
@@ -68,16 +74,17 @@ body {
 .datos {
     line-height: 1.7;
     margin-bottom: 16px;
-    color: #f0f0f0;
+    color: #e0f2fe;
 }
 
 .qr-box {
-    background: white;
+    background: #ffffff;
     border-radius: 18px;
     padding: 16px;
     display: flex;
     justify-content: center;
     align-items: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 .qr-box img {
@@ -96,7 +103,7 @@ body {
 
 .encabezado-seccion p {
     margin: 8px 0 0;
-    color: #d8d8d8;
+    color: #93c5fd;
 }
 
 .grid-materias {
@@ -110,12 +117,14 @@ body {
     display: flex;
     flex-direction: column;
     gap: 14px;
-    transition: transform 0.2s ease, border-color 0.2s ease;
+    background: rgba(0, 24, 46, 0.8);
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .card-materia:hover {
     transform: translateY(-3px);
-    border-color: rgba(212, 160, 23, 0.45);
+    border-color: rgba(0, 181, 226, 0.6);
+    box-shadow: 0 8px 20px rgba(0, 181, 226, 0.2);
 }
 
 .card-materia-top {
@@ -127,28 +136,28 @@ body {
 
 .badge-semestre,
 .badge-grupo {
-    padding: 7px 12px;
+    padding: 6px 12px;
     border-radius: 999px;
     font-size: 12px;
     font-weight: bold;
 }
 
 .badge-semestre {
-    background: rgba(190, 4, 4, 0.2);
-    color: #ff9f9f;
-    border: 1px solid rgba(190, 4, 4, 0.35);
+    background: rgba(0, 91, 130, 0.4);
+    color: #7dd3fc;
+    border: 1px solid rgba(0, 181, 226, 0.4);
 }
 
 .badge-grupo {
-    background: rgba(212, 160, 23, 0.14);
-    color: #ffd76b;
-    border: 1px solid rgba(212, 160, 23, 0.35);
+    background: rgba(0, 181, 226, 0.15);
+    color: #00B5E2;
+    border: 1px solid rgba(0, 181, 226, 0.35);
 }
 
 .detalle-materia {
     display: grid;
     gap: 8px;
-    color: #ededed;
+    color: #e2e8f0;
 }
 
 .detalle-materia p {
@@ -164,37 +173,43 @@ body {
     border: none;
     border-radius: 12px;
     cursor: pointer;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: bold;
     text-decoration: none;
     text-align: center;
-    transition: 0.2s ease;
+    transition: all 0.2s ease;
 }
 
 .btn-inscribirme {
-    background: #d4a017;
-    color: black;
+    background: linear-gradient(135deg, #003B5C 0%, #005B82 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 43, 73, 0.3);
 }
 
 .btn-inscribirme:hover,
 .menu-opciones a:hover,
 .menu-opciones button:hover {
-    transform: translateY(-1px);
+    background: linear-gradient(135deg, #005B82 0%, #007CA8 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 181, 226, 0.25);
 }
 
 .btn-inscribirme:disabled {
-    background: #4b4b4b;
-    color: #cfcfcf;
+    background: rgba(255, 255, 255, 0.1);
+    color: #94a3b8;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     cursor: not-allowed;
     transform: none;
+    box-shadow: none;
 }
 
 .card-inscrito {
-    border-color: rgba(94, 181, 104, 0.45);
+    border-color: rgba(0, 181, 226, 0.5);
 }
 
 .aviso-vacio {
     padding: 18px;
+    color: #94a3b8;
 }
 
 .panel-menu {
@@ -208,37 +223,41 @@ body {
 }
 
 .perfil img {
-    width: 130px;
-    height: 130px;
+    width: 120px;
+    height: 120px;
     object-fit: cover;
     border-radius: 50%;
-    border: 3px solid #d4a017;
+    border: 3px solid #00B5E2;
     margin-bottom: 12px;
+    box-shadow: 0 4px 15px rgba(0, 181, 226, 0.3);
 }
 
 .perfil p {
     margin: 0;
     font-weight: bold;
+    color: #ffffff;
+    font-size: 16px;
 }
 
 .menu-opciones {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 12px;
 }
 
 .menu-opciones a,
 .menu-opciones button {
-    background: #d4a017;
-    color: black;
+    background: rgba(0, 59, 92, 0.8);
+    color: #ffffff;
+    border: 1px solid rgba(0, 181, 226, 0.3);
 }
 
 .menu-opciones input[type="file"] {
     width: 100%;
     padding: 10px;
     border-radius: 10px;
-    background: white;
-    color: black;
+    background: #ffffff;
+    color: #222222;
 }
 
 .bloque-subida {
@@ -248,16 +267,16 @@ body {
 }
 
 .resumen-materias-menu {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(0, 16, 38, 0.6);
+    border: 1px solid rgba(0, 181, 226, 0.2);
     border-radius: 14px;
     padding: 14px;
 }
 
 .resumen-materias-menu h3 {
     margin: 0 0 12px;
-    font-size: 17px;
-    color: #ffd76b;
+    font-size: 15px;
+    color: #7dd3fc;
 }
 
 .lista-resumen-materias {
@@ -273,24 +292,25 @@ body {
     flex-direction: column;
     gap: 4px;
     padding: 10px 12px;
-    border-radius: 12px;
-    background: rgba(190, 4, 4, 0.12);
-    border: 1px solid rgba(190, 4, 4, 0.22);
+    border-radius: 10px;
+    background: rgba(0, 43, 73, 0.5);
+    border: 1px solid rgba(0, 181, 226, 0.2);
 }
 
 .item-resumen-materia strong {
-    font-size: 14px;
+    font-size: 13px;
+    color: #ffffff;
 }
 
 .item-resumen-materia span,
 .texto-vacio-menu {
-    font-size: 13px;
-    color: #dddddd;
+    font-size: 12px;
+    color: #94a3b8;
 }
 
 .item-inscrito {
-    border-color: rgba(94, 181, 104, 0.35);
-    background: rgba(94, 181, 104, 0.12);
+    border-color: rgba(0, 181, 226, 0.5);
+    background: rgba(0, 181, 226, 0.1);
 }
 
 .cerrar-sidebar {
@@ -304,7 +324,8 @@ body {
 .modal-recorte {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.75);
+    background: rgba(0, 10, 26, 0.85);
+    backdrop-filter: blur(8px);
     display: flex;
     justify-content: center;
     align-items: flex-end;
@@ -322,7 +343,8 @@ body {
 .modal-contenido {
     width: 100%;
     max-width: 700px;
-    background: #111;
+    background: #001f33;
+    border: 1px solid rgba(0, 181, 226, 0.3);
     border-top-left-radius: 20px;
     border-top-right-radius: 20px;
     padding: 20px;
@@ -339,7 +361,7 @@ body {
     width: 100%;
     max-height: 60vh;
     overflow: hidden;
-    background: #222;
+    background: #001026;
     border-radius: 12px;
 }
 
@@ -353,14 +375,19 @@ body {
     position: absolute;
     top: 10px;
     right: 15px;
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     border: none;
     border-radius: 50%;
-    background: #be0404;
-    color: white;
-    font-size: 24px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    font-size: 22px;
     cursor: pointer;
+    transition: background 0.2s;
+}
+
+.cerrar-modal:hover {
+    background: rgba(239, 68, 68, 0.8);
 }
 
 .acciones-recorte {
@@ -370,14 +397,313 @@ body {
 }
 
 #btnCancelarRecorte {
-    background: #777;
-    color: white;
+    background: #475569;
+    color: #ffffff;
 }
 
 #btnGuardarRecorte {
-    background: #d4a017;
-    color: black;
+    background: linear-gradient(135deg, #003B5C 0%, #00B5E2 100%);
+    color: #ffffff;
 }
+
+/* =====================================================
+   ESTILOS PARA EL ESCÁNER QR
+   ===================================================== */
+
+.btn-escaneo-container {
+    margin-top: 15px;
+    text-align: center;
+}
+
+.btn-escaneo-tutor {
+    background: linear-gradient(135deg, #003B5C 0%, #005B82 100%);
+    color: #ffffff;
+    border: 1px solid rgba(0, 181, 226, 0.3);
+    padding: 12px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+.btn-escaneo-tutor:hover {
+    background: linear-gradient(135deg, #005B82 0%, #007CA8 100%);
+    box-shadow: 0 4px 15px rgba(0, 181, 226, 0.3);
+}
+
+/* Modal de escáner */
+.modal-escaneo {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 10, 26, 0.85);
+    backdrop-filter: blur(8px);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.modal-escaneo-contenido {
+    background: #001f33;
+    border: 1px solid rgba(0, 181, 226, 0.3);
+    border-radius: 18px;
+    width: 90%;
+    max-width: 500px;
+    padding: 22px;
+    position: relative;
+    text-align: center;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+}
+
+.cerrar-escaneo {
+    position: absolute;
+    top: 12px;
+    right: 15px;
+    font-size: 24px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    color: #94a3b8;
+    transition: color 0.2s;
+}
+
+.cerrar-escaneo:hover {
+    color: #00B5E2;
+}
+
+.video-container {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background: #001026;
+    border-radius: 12px;
+    overflow: hidden;
+    margin: 15px 0;
+    position: relative;
+    border: 1px solid rgba(0, 181, 226, 0.2);
+}
+
+#videoEscaner {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.escaneo-info {
+    margin: 10px 0;
+    font-size: 14px;
+    color: #e2e8f0;
+}
+
+.escaneo-acciones {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 15px;
+}
+
+.btn-subir-foto {
+    background: #003B5C;
+    color: #ffffff;
+    border: 1px solid rgba(0, 181, 226, 0.3);
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn-cancelar {
+    background: #334155;
+    color: #ffffff;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+/* =====================================================
+   MODAL PARA MODIFICAR USUARIO
+   ===================================================== */
+
+.btn-modificar-usuario {
+    background: linear-gradient(135deg, #003B5C 0%, #005B82 100%);
+    color: #ffffff;
+    border: 1px solid rgba(0, 181, 226, 0.3);
+    padding: 12px 20px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    width: 100%;
+    transition: all 0.3s ease;
+    margin-bottom: 10px;
+}
+
+.btn-modificar-usuario:hover {
+    background: linear-gradient(135deg, #005B82 0%, #007CA8 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(0, 181, 226, 0.25);
+}
+
+.modal-modificar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 10, 26, 0.85);
+    backdrop-filter: blur(8px);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.modal-modificar.activo {
+    display: flex;
+}
+
+.modal-modificar-contenido {
+    background: #001f33;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 550px;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 25px;
+    position: relative;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(0, 181, 226, 0.3);
+}
+
+.modal-modificar-contenido::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal-modificar-contenido::-webkit-scrollbar-track {
+    background: #001026;
+    border-radius: 10px;
+}
+
+.modal-modificar-contenido::-webkit-scrollbar-thumb {
+    background: #005B82;
+    border-radius: 10px;
+}
+
+.modal-modificar-contenido h2 {
+    color: #ffffff;
+    text-align: center;
+    margin: 0 0 20px 0;
+    font-size: 20px;
+    border-bottom: 2px solid rgba(0, 181, 226, 0.3);
+    padding-bottom: 12px;
+}
+
+.cerrar-modificar {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 26px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    color: #94a3b8;
+    transition: color 0.2s;
+}
+
+.cerrar-modificar:hover {
+    color: #00B5E2;
+}
+
+.grid-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.campo {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.campo-completo {
+    grid-column: span 2;
+}
+
+.campo label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #e2e8f0;
+}
+
+.campo input {
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 181, 226, 0.2);
+    background: #001026;
+    color: #ffffff;
+    font-size: 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.campo input:focus {
+    outline: none;
+    border-color: #00B5E2;
+    box-shadow: 0 0 0 3px rgba(0, 181, 226, 0.2);
+}
+
+.campo input:read-only {
+    background: rgba(0, 24, 46, 0.6);
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+
+.modal-acciones {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 15px;
+}
+
+.btn-cancelar-modal {
+    background: #334155;
+    color: #ffffff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.2s;
+}
+
+.btn-cancelar-modal:hover {
+    background: #475569;
+}
+
+.btn-guardar-modal {
+    background: linear-gradient(135deg, #003B5C 0%, #00B5E2 100%);
+    color: #ffffff;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+
+.btn-guardar-modal:hover {
+    box-shadow: 0 4px 15px rgba(0, 181, 226, 0.3);
+}
+
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
 
 @media (max-width: 1200px) {
     .contenedor-alumno {
@@ -404,6 +730,9 @@ body {
 @media (max-width: 700px) {
     body {
         padding: 10px;
+        background:
+            linear-gradient(rgba(0, 16, 38, 0.65), rgba(0, 40, 85, 0.75)),
+            url('../../resources/patron.png') left center/contain no-repeat;
     }
 
     .btn-menu-movil {
@@ -420,6 +749,7 @@ body {
         border-radius: 0;
         transition: right 0.3s ease;
         overflow-y: auto;
+        background: #001f33;
     }
 
     .panel-menu.activo {
@@ -429,20 +759,20 @@ body {
     .cerrar-sidebar {
         display: block;
         margin-left: auto;
-        background: #be0404;
-        color: white;
+        background: rgba(255, 255, 255, 0.1);
+        color: #ffffff;
         border: none;
-        width: 42px;
-        height: 42px;
+        width: 40px;
+        height: 40px;
         border-radius: 50%;
-        font-size: 26px;
+        font-size: 24px;
         cursor: pointer;
     }
 
     .overlay-sidebar {
         position: fixed;
         inset: 0;
-        background: rgba(0, 0, 0, 0.6);
+        background: rgba(0, 10, 26, 0.7);
         z-index: 2400;
     }
 
@@ -456,5 +786,43 @@ body {
 
     .acciones-recorte {
         flex-direction: column;
+    }
+
+    .modal-modificar-contenido {
+        width: 95%;
+        padding: 20px;
+    }
+
+    .grid-form {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .campo-completo {
+        grid-column: span 1;
+    }
+
+    .modal-acciones {
+        flex-direction: column;
+    }
+
+    .btn-cancelar-modal,
+    .btn-guardar-modal {
+        width: 100%;
+    }
+
+    .modal-escaneo-contenido {
+        width: 95%;
+        padding: 15px;
+    }
+
+    .btn-escaneo-tutor {
+        font-size: 14px;
+        padding: 10px 15px;
+    }
+
+    .escaneo-acciones {
+        flex-direction: column;
+        gap: 8px;
     }
 }

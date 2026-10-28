@@ -2,7 +2,7 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: Arial, sans-serif;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
 body {
@@ -10,7 +10,10 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    background: #e9e9e9;
+    background:
+        linear-gradient(rgba(0, 16, 38, 0.45), rgba(0, 40, 85, 0.55)),
+        url('../../resources/patron.png') left center/contain no-repeat;
+    background-color: #001026;
     padding: 20px;
 }
 
@@ -19,6 +22,8 @@ body {
     height: 175px;
     border-radius: 50%;
     overflow: hidden;
+    position: relative;
+    z-index: 2;
 }
 
 .logo-circulo img {
@@ -33,11 +38,11 @@ body {
     max-width: 800px;
     height: 500px;
     margin: auto;
-    border-radius: 15px;
+    border-radius: 16px;
     overflow: hidden;
-    box-shadow: 0 0 15px #0005;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.35);
     transition: height 0.35s ease, box-shadow 0.35s ease;
-    background: white;
+    background: #ffffff;
 }
 
 .panel {
@@ -46,7 +51,7 @@ body {
     width: 50%;
     height: 100%;
     padding: 40px;
-    background: white;
+    background: #ffffff;
     transition: opacity .35s ease, transform .6s ease;
     z-index: 2;
     overflow-y: auto;
@@ -71,21 +76,29 @@ body {
 }
 
 .panel label {
-    margin-bottom: 5px;
-    color: #222;
-    font-weight: bold;
+    margin-bottom: 6px;
+    color: #333333;
+    font-weight: 600;
+    font-size: 14px;
 }
 
 input,
 select {
     width: 100%;
-    padding: 10px;
-    margin-bottom: 12px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
     border-radius: 8px;
-    border: 1px solid #ccc;
-    color: #222;
+    border: 1px solid #d1d5db;
+    color: #222222;
     font-size: 14px;
     outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input:focus,
+select:focus {
+    border-color: #007CA8;
+    box-shadow: 0 0 0 3px rgba(0, 181, 226, 0.15);
 }
 
 select {
@@ -96,35 +109,41 @@ select {
 }
 
 select option {
-    color: #222;
-    background: white;
+    color: #222222;
+    background: #ffffff;
 }
 
 input:disabled,
 select:disabled {
-    background: #f1f1f1;
-    color: #777;
+    background: #f1f5f9;
+    color: #94a3b8;
     cursor: not-allowed;
 }
 
-button {
-    padding: 10px;
+/* Únicamente los botones de acción principal (Entrar y Enviar solicitud) */
+.btn {
+    padding: 12px;
     width: 100%;
     border: none;
-    margin: 25px 0;
+    margin: 20px 0 15px 0;
     border-radius: 8px;
     cursor: pointer;
-    background: #cc0000;
-    color: white;
+    background: linear-gradient(135deg, #002B49 0%, #003B5C 100%);
+    color: #ffffff;
     font-weight: bold;
+    font-size: 15px;
+    box-shadow: 0 4px 12px rgba(0, 43, 73, 0.25);
+    transition: all 0.3s ease-in-out;
 }
 
 .btn:hover {
-    background-color: #990000;
-    padding: 15px;
-    transition: 0.3s ease-in-out;
-    font-weight: bold;
-    transform: scale(1.05);
+    background: linear-gradient(135deg, #003B5C 0%, #005B82 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 181, 226, 0.3);
+}
+
+.btn:active {
+    transform: translateY(0);
 }
 
 .input-pass {
@@ -135,18 +154,32 @@ button {
 
 .input-pass input {
     width: 100%;
-    padding: 10px 45px 10px 10px;
+    padding: 10px 45px 10px 12px;
     height: 42px;
 }
 
+/* Botón del ojo aislado */
 .btn-ojo {
     position: absolute;
-    background-color: transparent;
-    right: 10px;
+    background: transparent !important;
+    border: none !important;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%) !important;
     left: auto;
-    width: auto;
-    margin: 0;
-    padding: 0;
+    width: auto !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    cursor: pointer;
+    z-index: 5;
+}
+
+.btn-ojo:hover {
+    background: transparent !important;
+    transform: translateY(-50%) !important;
+    box-shadow: none !important;
 }
 
 .btn-ojo img {
@@ -161,33 +194,41 @@ button {
     transform: scale(0.7);
 }
 
+/* Botones con estilo de enlace plano (Solicitar registro / Iniciar sesión) */
+button.linkBtn,
 .linkBtn {
-    background: none;
-    border: none;
-    color: blue;
+    background: none !important;
+    border: none !important;
+    color: #005B82 !important;
     cursor: pointer;
     text-decoration: none;
-    padding: 0;
-    width: auto;
-    margin: 0;
+    padding: 0 !important;
+    width: auto !important;
+    margin: 0 !important;
+    font-weight: 600;
+    font-size: 14px;
+    box-shadow: none !important;
+    display: inline;
+    transition: color 0.2s ease;
 }
 
+button.linkBtn:hover,
 .linkBtn:hover {
-    color: #8c00ff;
-    scale: 1.02;
+    background: none !important;
+    color: #00B5E2 !important;
+    transform: none !important;
     text-decoration: underline;
-    font-size: 15px;
-    transition: 0.2s ease-in-out;
+    box-shadow: none !important;
 }
 
-.panel-rojo {
+.panel-azul {
     position: absolute;
     top: 0;
     left: 0;
     width: 50%;
     height: 100%;
-    background: linear-gradient(135deg, #ff0000, #cc0000, #990000);
-    color: white;
+    background: linear-gradient(135deg, #003B5C 0%, #00B5E2 100%);
+    color: #ffffff;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -197,6 +238,11 @@ button {
     padding: 20px;
     transition: all .6s ease;
     z-index: 3;
+}
+
+.panel-azul>* {
+    position: relative;
+    z-index: 2;
 }
 
 .mover-derecha {
@@ -240,6 +286,9 @@ button {
     body {
         padding: 10px;
         align-items: flex-start;
+        background:
+            linear-gradient(rgba(0, 16, 38, 0.55), rgba(0, 40, 85, 0.65)),
+            url('../../resources/patron.png') left center/contain no-repeat;
     }
 
     img {
@@ -266,7 +315,7 @@ button {
         padding: 25px 20px;
         overflow-y: auto;
         position: absolute;
-        background: white;
+        background: #ffffff;
         z-index: 2;
     }
 
@@ -283,7 +332,7 @@ button {
         transform: translateY(100%);
     }
 
-    .panel-rojo {
+    .panel-azul {
         width: 100%;
         height: 120px;
         left: 0;
@@ -303,7 +352,7 @@ button {
         margin: 0 auto;
     }
 
-    .panel-rojo h1 {
+    .panel-azul h1 {
         font-size: 18px;
         line-height: 1.1;
         margin: 0;
@@ -355,7 +404,7 @@ button {
 
     input,
     select,
-    button {
+    .btn {
         font-size: 16px;
     }
 }

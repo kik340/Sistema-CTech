@@ -1,43 +1,24 @@
-"""Clases para construir PDFs del sistema.
-
-Este archivo encapsula la plantilla visual del PDF y la variante usada para
-exportar el código QR del alumno o externo.
-"""
+# PDFManager.py - Versión SIMPLIFICADA y CORREGIDA
 
 import io
 import os
-from reportlab.lib.pagesizes import A4, A3, landscape
+from datetime import datetime
+from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib.units import mm
 from reportlab.lib import colors
+from reportlab.lib.units import mm, cm
 
 
 class PdfManager:
     """Define la base visual para los PDFs generados por la aplicación."""
+
     def __init__(self, logo_path, nombre_escuela):
         self.logo_path = logo_path
         self.nombre_escuela = nombre_escuela
         self.buffer = io.BytesIO()
         self.c = canvas.Canvas(self.buffer, pagesize=A4)
         self.ancho, self.alto = A4
-
-    def dibujar_texto_con_borde(self, x, y, texto, fuente="Helvetica-Bold", tamano=18):
-        self.c.setFont(fuente, tamano)
-        self.c.setFillColor(colors.black)
-
-        desplazamientos = [
-            (-1, 0), (1, 0), (0, -1), (0, 1),
-            (-1, -1), (-1, 1), (1, -1), (1, 1)
-        ]
-
-        for dx, dy in desplazamientos:
-            self.c.drawCentredString(x + dx, y + dy, texto)
-
-        self.c.setFillColor(colors.white)
-        self.c.drawCentredString(x, y, texto)
 
     def dibujar_encabezado(self):
         altura_franja = 95
@@ -46,29 +27,45 @@ class PdfManager:
         self.c.setFillColor(colors.HexColor("#b30000"))
         self.c.rect(0, y_franja, self.ancho, altura_franja, fill=1, stroke=0)
 
+        # Buscar logo
+        logo_encontrado = None
+        rutas_posibles = [
+            self.logo_path,
+            "static/img/logo_itsa.png",
+            "static/resources/logo.png",
+            "static/logo.png",
+            "static/img/logo.png",
+        ]
+
+        for ruta in rutas_posibles:
+            if os.path.exists(ruta):
+                logo_encontrado = ruta
+                break
+
         centro_logo_x = 72
         centro_logo_y = y_franja + 47
 
         self.c.setFillColor(colors.white)
         self.c.circle(centro_logo_x, centro_logo_y, 33, fill=1, stroke=0)
 
-        if os.path.exists(self.logo_path):
-            self.c.drawImage(
-                self.logo_path,
-                centro_logo_x - 25,
-                centro_logo_y - 25,
-                width=50,
-                height=50,
-                preserveAspectRatio=True,
-                mask="auto"
-            )
+        if logo_encontrado and os.path.exists(logo_encontrado):
+            try:
+                self.c.drawImage(
+                    logo_encontrado,
+                    centro_logo_x - 25,
+                    centro_logo_y - 25,
+                    width=50,
+                    height=50,
+                    preserveAspectRatio=True,
+                    mask="auto",
+                )
+            except:
+                pass
 
-        self.dibujar_texto_con_borde(
-            self.ancho / 2 + 35,
-            y_franja + 40,
-            self.nombre_escuela,
-            "Helvetica-Bold",
-            20
+        self.c.setFont("Helvetica-Bold", 20)
+        self.c.setFillColor(colors.white)
+        self.c.drawCentredString(
+            self.ancho / 2 + 35, y_franja + 40, self.nombre_escuela
         )
 
         self.c.setLineWidth(1.4)
@@ -76,7 +73,6 @@ class PdfManager:
         self.c.line(30, y_franja - 8, self.ancho - 30, y_franja - 8)
 
     def guardar_pdf(self):
-        self.c.showPage()
         self.c.save()
         self.buffer.seek(0)
         return self.buffer
@@ -84,7 +80,17 @@ class PdfManager:
 
 class PdfQrAlumno(PdfManager):
     """Especializa la plantilla PDF para exportar el QR del usuario."""
-    def __init__(self, logo_path, nombre_escuela, nombre_alumno, matricula, email, carrera, qr_buffer):
+
+    def __init__(
+        self,
+        logo_path,
+        nombre_escuela,
+        nombre_alumno,
+        matricula,
+        email,
+        carrera,
+        qr_buffer,
+    ):
         super().__init__(logo_path, nombre_escuela)
         self.nombre_alumno = nombre_alumno
         self.matricula = matricula
@@ -112,7 +118,7 @@ class PdfQrAlumno(PdfManager):
             width=qr_size,
             height=qr_size,
             preserveAspectRatio=True,
-            mask="auto"
+            mask="auto",
         )
 
         y_info = qr_y - 65
@@ -131,125 +137,31 @@ class PdfQrAlumno(PdfManager):
         self.c.setFont("Helvetica", 16)
         self.c.drawString(85, y_info - 108, self.email)
 
-        return self.guardar_pdf()
-
-
-class PdfSeguimientoAcademico(PdfManager):
-    """Genera un PDF en formato tabla con la información del seguimiento académico."""
-
-    def __init__(self, logo_path, nombre_escuela, seguimiento, filas):
-        super().__init__(logo_path, nombre_escuela)
-        self.seguimiento = seguimiento
-        self.filas = filas
-
-    def _valor_si_no(self, valor):
-        return "Sí" if int(valor or 0) == 1 else "No"
-
-    def construir(self):
-        self.buffer = io.BytesIO()
-        doc = SimpleDocTemplate(
-            self.buffer,
-            pagesize=landscape(A3),
-            leftMargin=14 * mm,
-            rightMargin=14 * mm,
-            topMargin=18 * mm,
-            bottomMargin=14 * mm,
-        )
-
-        estilos = getSampleStyleSheet()
-        elementos = []
-
-        titulo = Paragraph("<b>Seguimiento académico</b>", estilos["Title"])
-        subtitulo = Paragraph(
-            (
-                f"<b>Grupo ID:</b> {self.seguimiento.get('grupo_id', '')} &nbsp;&nbsp;&nbsp; "
-                f"<b>Parcial:</b> {self.seguimiento.get('parcial', '')} &nbsp;&nbsp;&nbsp; "
-                f"<b>Total estudiantes:</b> {self.seguimiento.get('total_estudiantes', '')}"
-            ),
-            estilos["Normal"],
-        )
-        observaciones = Paragraph(
-            f"<b>Observaciones generales:</b> {self.seguimiento.get('observaciones') or 'Sin observaciones'}",
-            estilos["Normal"],
-        )
-
-        elementos.extend([titulo, Spacer(1, 8), subtitulo, Spacer(1, 8), observaciones, Spacer(1, 10)])
-
-        encabezados = [
-            "Matrícula", "Nombre", "Asistencia", "Canalización", "Prob. económicos",
-            "Prob. salud", "Prob. emocionales", "Prob. familiares", "Prob. académicos",
-            "Beca JCF", "Beca manutención", "Beca JMF", "Otra beca", "Apoyo psicológico",
-            "Apoyo médico", "Otro apoyo", "Promedio", "Reprobadas", "Aprobado",
-            "Posible deserción", "Comentario"
-        ]
-
-        data = [encabezados]
-        for fila in self.filas:
-            data.append([
-                str(fila.get("matricula", "")),
-                str(fila.get("nombre_completo", "")),
-                self._valor_si_no(fila.get("asistencia")),
-                self._valor_si_no(fila.get("canalizacion_tutoria_individual")),
-                self._valor_si_no(fila.get("problemas_economicos")),
-                self._valor_si_no(fila.get("problemas_salud")),
-                self._valor_si_no(fila.get("problemas_emocionales")),
-                self._valor_si_no(fila.get("problemas_familiares")),
-                self._valor_si_no(fila.get("problemas_academicos")),
-                self._valor_si_no(fila.get("beca_jcf")),
-                self._valor_si_no(fila.get("beca_manutencion")),
-                self._valor_si_no(fila.get("beca_jmf")),
-                self._valor_si_no(fila.get("beca_otro")),
-                self._valor_si_no(fila.get("apoyo_psicologico")),
-                self._valor_si_no(fila.get("apoyo_medico")),
-                self._valor_si_no(fila.get("apoyo_otro")),
-                "" if fila.get("promedio") is None else str(fila.get("promedio")),
-                str(fila.get("materias_reprobadas") or 0),
-                self._valor_si_no(fila.get("estatus_aprobado")),
-                self._valor_si_no(fila.get("posible_desercion")),
-                str(fila.get("comentario") or ""),
-            ])
-
-        col_widths = [
-            26*mm, 55*mm, 18*mm, 20*mm, 20*mm, 18*mm, 20*mm, 20*mm, 20*mm,
-            17*mm, 22*mm, 17*mm, 18*mm, 22*mm, 20*mm, 18*mm, 18*mm, 18*mm, 16*mm, 24*mm, 45*mm
-        ]
-
-        tabla = Table(data, colWidths=col_widths, repeatRows=1)
-        tabla.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#b30000")),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("FONTSIZE", (0, 0), (-1, 0), 8),
-            ("FONTSIZE", (0, 1), (-1, -1), 7),
-            ("LEADING", (0, 0), (-1, -1), 9),
-            ("GRID", (0, 0), (-1, -1), 0.35, colors.grey),
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("ALIGN", (2, 1), (19, -1), "CENTER"),
-            ("ALIGN", (0, 0), (-1, 0), "CENTER"),
-            ("LEFTPADDING", (0, 0), (-1, -1), 4),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 4),
-            ("TOPPADDING", (0, 0), (-1, -1), 4),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
-            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.whitesmoke, colors.HexColor("#f7f7f7")]),
-        ]))
-
-        elementos.append(tabla)
-        doc.build(elementos)
+        self.c.showPage()
+        self.c.save()
         self.buffer.seek(0)
         return self.buffer
-class PdfSeguimientoAcademico(PdfManager):
+
+
+class PdfSeguimientoAcademico:
+    """Genera PDF de seguimiento académico - VERSIÓN SIMPLIFICADA Y ROBUSTA"""
+
     def __init__(self, logo_path, nombre_escuela, seguimiento, alumnos, detalle_map):
-        super().__init__(logo_path, nombre_escuela)
+        self.logo_path = logo_path
+        self.nombre_escuela = nombre_escuela
         self.seguimiento = seguimiento
         self.alumnos = alumnos
         self.detalle_map = detalle_map
+        self.buffer = io.BytesIO()
+        # Crear canvas en landscape
+        self.ancho, self.alto = landscape(A4)
+        self.c = canvas.Canvas(self.buffer, pagesize=landscape(A4))
 
     def _texto_si_no(self, valor):
         return "Sí" if str(valor) == "1" else "No"
 
     def _compactar_problemas(self, d):
         problemas = []
-
         if d.get("problemas_economicos") == 1:
             problemas.append("Económicos")
         if d.get("problemas_salud") == 1:
@@ -260,21 +172,12 @@ class PdfSeguimientoAcademico(PdfManager):
             problemas.append("Familiares")
         if d.get("problemas_academicos") == 1:
             problemas.append("Académicos")
-
         if not problemas:
             return "Ninguno"
-
-        if len(problemas) == 1:
-            return problemas[0]
-
-        if len(problemas) == 2:
-            return f"{problemas[0]} y {problemas[1]}"
-
-        return f"Varios ({len(problemas)}): " + ", ".join(problemas)
+        return ", ".join(problemas)
 
     def _compactar_becas(self, d):
         becas = []
-
         if d.get("beca_jcf") == 1:
             becas.append("JCF")
         if d.get("beca_manutencion") == 1:
@@ -283,182 +186,258 @@ class PdfSeguimientoAcademico(PdfManager):
             becas.append("JMF")
         if d.get("beca_otro") == 1:
             becas.append("Otra")
-
         return ", ".join(becas) if becas else "Ninguna"
 
     def _compactar_apoyos(self, d):
         apoyos = []
-
         if d.get("apoyo_psicologico") == 1:
             apoyos.append("Psicológico")
         if d.get("apoyo_medico") == 1:
             apoyos.append("Médico")
         if d.get("apoyo_otro") == 1:
             apoyos.append("Otro")
-
         return ", ".join(apoyos) if apoyos else "Ninguno"
 
-    def construir(self):
-        from reportlab.lib import colors
-
-        self.dibujar_encabezado()
-
-        y = self.alto - 125
-
-        self.c.setFillColor(colors.black)
-        self.c.setFont("Helvetica-Bold", 16)
-        self.c.drawString(40, y, "Seguimiento Académico")
-
-        y -= 25
-        self.c.setFont("Helvetica", 11)
-        self.c.drawString(40, y, f"Grupo ID: {self.seguimiento.get('grupo_id', '')}")
-        self.c.drawString(220, y, f"Parcial: {self.seguimiento.get('parcial', '')}")
-        self.c.drawString(380, y, f"Total estudiantes: {self.seguimiento.get('total_estudiantes', len(self.alumnos))}")
-
-        y -= 30
-
-        columnas = [
-            ("Matrícula", 55),
-            ("Nombre", 115),
-            ("Asis.", 32),
-            ("Prom.", 35),
-            ("Repr.", 32),
-            ("Aprob.", 36),
-            ("Deserc.", 40),
-            ("Problemas", 110),
-            ("Becas", 75),
-            ("Apoyos", 75),
-            ("Comentario", 110),
+    def _buscar_logo(self):
+        rutas = [
+            self.logo_path,
+            "static/img/logo_itsa.png",
+            "static/resources/logo.png",
+            "static/logo.png",
         ]
+        for ruta in rutas:
+            if os.path.exists(ruta):
+                return ruta
+        return None
 
-        x_inicial = 20
-        altura_header = 22
-        altura_fila = 38
+    def _dibujar_encabezado(self):
+        """Dibuja el encabezado sin usar rect con coordenadas problemáticas"""
+        ancho = self.ancho
+        alto = self.alto
 
-        ancho_total = sum(ancho for _, ancho in columnas)
+        # Franja roja
+        franja_alto = 80
+        y_franja = alto - franja_alto
 
         self.c.setFillColor(colors.HexColor("#b30000"))
-        self.c.rect(x_inicial, y - altura_header, ancho_total, altura_header, fill=1, stroke=0)
+        self.c.rect(0, y_franja, ancho, franja_alto, fill=1, stroke=0)
 
-        x = x_inicial
+        # Logo
+        logo = self._buscar_logo()
+        if logo:
+            try:
+                self.c.drawImage(
+                    logo,
+                    30,
+                    y_franja + 15,
+                    width=50,
+                    height=50,
+                    preserveAspectRatio=True,
+                )
+            except:
+                pass
+
+        # Textos
+        self.c.setFont("Helvetica-Bold", 16)
         self.c.setFillColor(colors.white)
-        self.c.setFont("Helvetica-Bold", 7)
-        for titulo, ancho in columnas:
-            self.c.rect(x, y - altura_header, ancho, altura_header, fill=0, stroke=1)
-            self.c.drawCentredString(x + ancho / 2, y - 14, titulo)
-            x += ancho
+        self.c.drawString(100, y_franja + 50, self.nombre_escuela)
 
-        y -= altura_header
+        self.c.setFont("Helvetica-Bold", 10)
+        self.c.drawString(100, y_franja + 30, "REPORTE DE SEGUIMIENTO ACADÉMICO")
 
-        self.c.setFont("Helvetica", 6.3)
+        self.c.setFont("Helvetica", 8)
+        periodo = self.seguimiento.get("periodo", "Enero - Junio 2026")
+        self.c.drawString(100, y_franja + 15, f"Periodo: {periodo}")
+
+        # Línea separadora
+        self.c.setStrokeColor(colors.black)
+        self.c.setLineWidth(1)
+        self.c.line(30, y_franja - 10, ancho - 30, y_franja - 10)
+
+        # Información del grupo
+        y_info = y_franja - 30
         self.c.setFillColor(colors.black)
+        self.c.setFont("Helvetica", 8)
 
-        for alumno in self.alumnos:
-            d = self.detalle_map.get(alumno["matricula"], {})
+        division = self.seguimiento.get("division", "Ingeniería Industrial")
+        tutor = self.seguimiento.get("persona_tutora", "")
+        parcial = self.seguimiento.get("parcial", "Primero")
 
-            if y < 90:
-                self.c.showPage()
-                self.dibujar_encabezado()
-                y = self.alto - 125
+        self.c.drawString(30, y_info, f"División: {division}")
+        self.c.drawString(280, y_info, f"Persona tutora: {tutor}")
+        self.c.drawString(550, y_info, f"Parcial: {parcial}")
 
-                self.c.setFillColor(colors.HexColor("#b30000"))
-                self.c.rect(x_inicial, y - altura_header, ancho_total, altura_header, fill=1, stroke=0)
+        y_info -= 18
+        grupo_letra = self.seguimiento.get("grupo_letra", "A")
+        total = len(self.alumnos)
+        hombres = sum(1 for a in self.alumnos if a.get("genero", "M") == "H")
+        mujeres = total - hombres
 
-                x = x_inicial
-                self.c.setFillColor(colors.white)
-                self.c.setFont("Helvetica-Bold", 7)
-                for titulo, ancho in columnas:
-                    self.c.rect(x, y - altura_header, ancho, altura_header, fill=0, stroke=1)
-                    self.c.drawCentredString(x + ancho / 2, y - 14, titulo)
-                    x += ancho
+        self.c.drawString(30, y_info, f"Grupo: {grupo_letra}")
+        self.c.drawString(280, y_info, f"N° estudiantes: {total}")
+        self.c.drawString(450, y_info, f"Hombres: {hombres}")
+        self.c.drawString(550, y_info, f"Mujeres: {mujeres}")
 
-                y -= altura_header
-                self.c.setFont("Helvetica", 6.3)
-                self.c.setFillColor(colors.black)
+        return y_info - 20
 
-            problemas = self._compactar_problemas(d)
-            becas = self._compactar_becas(d)
-            apoyos = self._compactar_apoyos(d)
-            comentario = (d.get("comentario") or "").strip()
+    def construir(self):
+        """Construye el PDF completo"""
+        try:
+            ancho = self.ancho
 
-            if len(comentario) > 55:
-                comentario = comentario[:52] + "..."
+            # Dibujar encabezado
+            y = self._dibujar_encabezado()
 
-            valores = [
-                str(alumno["matricula"]),
-                str(alumno["nombre_completo"])[:26],
-                self._texto_si_no(d.get("asistencia", 0)),
-                str(d.get("promedio", "")),
-                str(d.get("materias_reprobadas", 0)),
-                self._texto_si_no(d.get("estatus_aprobado", 0)),
-                self._texto_si_no(d.get("posible_desercion", 0)),
-                problemas,
-                becas,
-                apoyos,
-                comentario if comentario else "-",
+            # Definir columnas
+            columnas = [
+                ("Matrícula", 55),
+                ("Nombre", 110),
+                ("S", 25),
+                ("Asist", 35),
+                ("Prom", 40),
+                ("Rep", 38),
+                ("Apr", 35),
+                ("Becas", 60),
+                ("Apoyos", 60),
+                ("Problemas", 90),
+                ("Des", 35),
+                ("Comentario", 110),
             ]
 
-            x = x_inicial
-            for i, (_, ancho) in enumerate(columnas):
-                self.c.rect(x, y - altura_fila, ancho, altura_fila, fill=0, stroke=1)
+            x_inicial = 20
+            alto_header = 22
 
-                texto = valores[i]
-                lineas = []
-                while texto:
-                    limite = max(1, int(ancho / 4.2))
-                    parte = texto[:limite]
-                    texto = texto[limite:]
-                    lineas.append(parte)
+            # Calcular posiciones
+            posiciones = []
+            x_actual = x_inicial
+            for nombre, ancho_col in columnas:
+                posiciones.append((x_actual, ancho_col))
+                x_actual += ancho_col
 
-                lineas = lineas[:4]
-                yy = y - 10
-                for linea in lineas:
-                    self.c.drawString(x + 2, yy, linea)
-                    yy -= 8
+            # Dibujar header
+            self.c.setFillColor(colors.HexColor("#b30000"))
+            self.c.rect(
+                x_inicial,
+                y - alto_header,
+                x_actual - x_inicial,
+                alto_header,
+                fill=1,
+                stroke=0,
+            )
 
-                x += ancho
+            self.c.setFillColor(colors.white)
+            self.c.setFont("Helvetica-Bold", 7)
+            for i, (nombre, ancho_col) in enumerate(columnas):
+                x, w = posiciones[i]
+                self.c.rect(x, y - alto_header, w, alto_header, fill=0, stroke=1)
+                self.c.drawCentredString(x + w / 2, y - alto_header + 8, nombre)
 
-            y -= altura_fila
+            y -= alto_header
+            self.c.setFont("Helvetica", 6.5)
+            self.c.setFillColor(colors.black)
+            alto_fila = 28
 
-        y -= 18
-        observaciones = (self.seguimiento.get("observaciones") or "").strip()
-
-        if observaciones:
-            if y < 100:
-                self.c.showPage()
-                self.dibujar_encabezado()
-                y = self.alto - 130
-
-            self.c.setFont("Helvetica-Bold", 10)
-            self.c.drawString(30, y, "Observaciones generales:")
-            y -= 14
-
-            self.c.setFont("Helvetica", 8)
-            ancho_texto = 530
-            palabras = observaciones.split()
-            lineas = []
-            actual = ""
-
-            for palabra in palabras:
-                prueba = actual + (" " if actual else "") + palabra
-                if self.c.stringWidth(prueba, "Helvetica", 8) <= ancho_texto:
-                    actual = prueba
-                else:
-                    if actual:
-                        lineas.append(actual)
-                    actual = palabra
-
-            if actual:
-                lineas.append(actual)
-
-            for linea in lineas:
-                if y < 60:
+            # Dibujar alumnos
+            for alumno in self.alumnos:
+                # Verificar espacio
+                if y - alto_fila < 60:
                     self.c.showPage()
-                    self.dibujar_encabezado()
-                    y = self.alto - 130
-                    self.c.setFont("Helvetica", 8)
+                    y = self._dibujar_encabezado()
+                    # Redibujar header
+                    self.c.setFillColor(colors.HexColor("#b30000"))
+                    self.c.rect(
+                        x_inicial,
+                        y - alto_header,
+                        x_actual - x_inicial,
+                        alto_header,
+                        fill=1,
+                        stroke=0,
+                    )
+                    self.c.setFillColor(colors.white)
+                    self.c.setFont("Helvetica-Bold", 7)
+                    for i, (nombre, ancho_col) in enumerate(columnas):
+                        x, w = posiciones[i]
+                        self.c.rect(
+                            x, y - alto_header, w, alto_header, fill=0, stroke=1
+                        )
+                        self.c.drawCentredString(x + w / 2, y - alto_header + 8, nombre)
+                    y -= alto_header
+                    self.c.setFont("Helvetica", 6.5)
+                    self.c.setFillColor(colors.black)
 
-                self.c.drawString(30, y, linea)
-                y -= 11
+                datos = self.detalle_map.get(alumno["matricula"], {})
 
-        return self.guardar_pdf()
+                valores = [
+                    alumno["matricula"],
+                    alumno["nombre_completo"][:25],
+                    alumno.get("genero", "M")[:1],
+                    self._texto_si_no(datos.get("asistencia", 0)),
+                    str(datos.get("promedio", "")) if datos.get("promedio") else "",
+                    str(datos.get("materias_reprobadas", 0)),
+                    self._texto_si_no(datos.get("estatus_aprobado", 0)),
+                    self._compactar_becas(datos)[:12],
+                    self._compactar_apoyos(datos)[:12],
+                    self._compactar_problemas(datos)[:20],
+                    self._texto_si_no(datos.get("posible_desercion", 0)),
+                    (datos.get("comentario", "") or "-")[:35],
+                ]
+
+                for i, (x, w) in enumerate(posiciones):
+                    self.c.rect(x, y - alto_fila, w, alto_fila, fill=0, stroke=0.5)
+                    texto = str(valores[i]) if valores[i] else ""
+
+                    if i == 1:  # Nombre
+                        self.c.drawString(x + 2, y - alto_fila + 10, texto)
+                    elif i in [0, 2, 3, 4, 5, 6, 10]:  # Centrados
+                        self.c.drawCentredString(x + w / 2, y - alto_fila + 10, texto)
+                    else:
+                        self.c.drawString(x + 2, y - alto_fila + 10, texto)
+
+                y -= alto_fila
+
+            # Observaciones
+            observaciones = self.seguimiento.get("observaciones", "").strip()
+            if observaciones:
+                y -= 15
+                self.c.setFont("Helvetica-Bold", 7)
+                self.c.drawString(20, y, "Observaciones generales:")
+                y -= 10
+                self.c.setFont("Helvetica", 6.5)
+
+                # Texto multilínea simple
+                if self.c.stringWidth(observaciones, "Helvetica", 6.5) > ancho - 60:
+                    # Si es muy largo, truncar
+                    observaciones = observaciones[:80] + "..."
+
+                self.c.drawString(30, y, observaciones)
+                y -= 15
+
+            # Firmas
+            y -= 20
+            self.c.setFont("Helvetica", 7)
+            self.c.drawString(60, y, "___________________________________")
+            self.c.drawString(80, y - 10, "Firma del Tutor")
+
+            self.c.drawString(ancho - 220, y, "___________________________________")
+            self.c.drawString(ancho - 190, y - 10, "Firma del Alumno")
+
+            # Pie
+            self.c.setFont("Helvetica", 6)
+            self.c.setFillColor(colors.gray)
+            fecha = datetime.now().strftime("%d/%m/%Y %H:%M")
+            self.c.drawString(ancho - 150, 20, f"Generado: {fecha}")
+
+            self.c.showPage()
+            self.c.save()
+            self.buffer.seek(0)
+
+        except Exception as e:
+            # Si hay error, crear un PDF de error
+            self.buffer = io.BytesIO()
+            c = canvas.Canvas(self.buffer, pagesize=landscape(A4))
+            c.drawString(100, 400, f"Error generando PDF: {str(e)}")
+            c.showPage()
+            c.save()
+            self.buffer.seek(0)
+
+        return self.buffer

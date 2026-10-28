@@ -8,7 +8,7 @@ gestiona el botón para ver u ocultar contraseñas.
 
 const panelLogin = document.getElementById("panelLogin")
 const panelRegister = document.getElementById("panelRegister")
-const panelRojo = document.getElementById("panelRojo")
+const panelAzul = document.getElementById("panelAzul")
 const contenedor = document.querySelector(".contenedor")
 const btnRegistro = document.getElementById("btnRegistro")
 const btnLogin = document.getElementById("btnLogin")
@@ -115,8 +115,8 @@ function mostrarRegistro() {
         panelLogin.style.display = "block"
         panelRegister.style.display = "block"
 
-        panelRojo.classList.remove("mover-derecha", "mover-izquierda")
-        panelRojo.classList.add("mover-abajo")
+        panelAzul.classList.remove("mover-derecha", "mover-izquierda")
+        panelAzul.classList.add("mover-abajo")
 
         panelLogin.classList.add("ocultar-login")
         panelRegister.classList.add("mostrar-register")
@@ -125,8 +125,8 @@ function mostrarRegistro() {
         panelRegister.style.display = "block"
         panelRegister.style.opacity = "1"
 
-        panelRojo.classList.remove("mover-derecha")
-        panelRojo.classList.add("mover-izquierda")
+        panelAzul.classList.remove("mover-derecha")
+        panelAzul.classList.add("mover-izquierda")
 
         panelLogin.classList.add("fade-out")
 
@@ -151,8 +151,8 @@ function mostrarLogin() {
         panelLogin.style.display = "block"
         panelRegister.style.display = "block"
 
-        panelRojo.classList.remove("mover-abajo", "mover-izquierda")
-        panelRojo.classList.add("mover-derecha")
+        panelAzul.classList.remove("mover-abajo", "mover-izquierda")
+        panelAzul.classList.add("mover-derecha")
 
         panelRegister.classList.add("ocultar-register")
         panelLogin.classList.add("mostrar-login")
@@ -161,8 +161,8 @@ function mostrarLogin() {
         panelRegister.style.display = "block"
         panelLogin.style.opacity = "1"
 
-        panelRojo.classList.remove("mover-izquierda")
-        panelRojo.classList.add("mover-derecha")
+        panelAzul.classList.remove("mover-izquierda")
+        panelAzul.classList.add("mover-derecha")
 
         panelRegister.classList.add("fade-out")
 

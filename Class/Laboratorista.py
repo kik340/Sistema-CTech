@@ -1,15 +1,13 @@
-"""Funciones de apoyo para el módulo de laboratorista.
+"""Funciones de apoyo para el módulo de laboratorista."""
 
-Aquí se concentra la consulta de equipos, préstamos y la generación de la
-bitácora en Excel para el laboratorio.
-"""
-
-from db.Conection import obtener_cursor
-from openpyxl import load_workbook
 from datetime import datetime
+from openpyxl import load_workbook
+from db.Conection import obtener_cursor
+
 
 class LaboratoristaManager:
     """Agrupa consultas y operaciones del módulo de préstamo de equipos."""
+
     def obtener_equipos(self):
         conexion, cursor = obtener_cursor()
         cursor.execute("""
@@ -86,34 +84,61 @@ class LaboratoristaManager:
         conexion.close()
         return datos
 
+    def obtener_siguiente_codigo_equipo(self):
+        """Genera el siguiente código secuencial con formato EQ-001, EQ-002, etc."""
+        conexion, cursor = obtener_cursor()
+        cursor.execute("SELECT MAX(id) AS ultimo_id FROM equipos_laboratorio")
+        resultado = cursor.fetchone()
+        cursor.close()
+        conexion.close()
+
+        ultimo_id = (
+            resultado["ultimo_id"] if resultado and resultado["ultimo_id"] else 0
+        )
+        siguiente_id = ultimo_id + 1
+        return f"EQ-{str(siguiente_id).zfill(3)}"
+
     def registrar_equipo(self, datos):
         try:
             conexion, cursor = obtener_cursor()
-            cursor.execute("""
+
+            codigo_equipo = self.obtener_siguiente_codigo_equipo()
+
+            num_serie = datos.get("numero_serie")
+            if num_serie and str(num_serie).strip() == "":
+                num_serie = None
+
+            cursor.execute(
+                """
                 INSERT INTO equipos_laboratorio
                 (codigo_equipo, nombre_equipo, categoria, marca, modelo, numero_serie, descripcion, estado, ubicacion)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """, (
-                datos["codigo_equipo"],
-                datos["nombre_equipo"],
-                datos["categoria"],
-                datos["marca"],
-                datos["modelo"],
-                datos["numero_serie"],
-                datos["descripcion"],
-                datos["estado"],
-                datos["ubicacion"]
-            ))
+                """,
+                (
+                    codigo_equipo,
+                    datos.get("nombre_equipo"),
+                    datos.get("categoria"),
+                    datos.get("marca"),
+                    datos.get("modelo"),
+                    num_serie,
+                    datos.get("descripcion"),
+                    datos.get("estado", "disponible"),
+                    datos.get("ubicacion"),
+                ),
+            )
             conexion.commit()
             cursor.close()
             conexion.close()
             return {"status": "ok"}
+
         except Exception as e:
             try:
                 cursor.close()
                 conexion.close()
-            except:
+            except Exception:
                 pass
+
+            print("Error en registrar_equipo:", e)
 
             if "Duplicate entry" in str(e):
                 return {"status": "exists"}
@@ -123,17 +148,15 @@ class LaboratoristaManager:
     def buscar_usuario_por_matricula(self, matricula):
         conexion, cursor = obtener_cursor()
 
-        cursor.execute("""
-            SELECT 
-                a.matricula,
-                a.nombre_completo,
-                a.email,
-                'alumno' AS tipo_usuario,
-                c.nombre AS carrera
+        cursor.execute(
+            """
+            SELECT a.matricula, a.nombre_completo, a.email, 'alumno' AS tipo_usuario, c.nombre AS carrera
             FROM alumnos a
             INNER JOIN carreras c ON c.id = a.carrera_id
             WHERE a.matricula = %s AND a.activo = 1
-        """, (matricula,))
+            """,
+            (matricula,),
+        )
         alumno = cursor.fetchone()
 
         if alumno:
@@ -141,16 +164,14 @@ class LaboratoristaManager:
             conexion.close()
             return alumno
 
-        cursor.execute("""
-            SELECT 
-                matricula,
-                nombre_completo,
-                email,
-                'externo' AS tipo_usuario,
-                'Externo' AS carrera
+        cursor.execute(
+            """
+            SELECT matricula, nombre_completo, email, 'externo' AS tipo_usuario, 'Externo' AS carrera
             FROM externos
             WHERE matricula = %s AND activo = 1
-        """, (matricula,))
+            """,
+            (matricula,),
+        )
         externo = cursor.fetchone()
 
         if externo:
@@ -158,31 +179,29 @@ class LaboratoristaManager:
             conexion.close()
             return externo
 
-        cursor.execute("""
-            SELECT 
-                matricula,
-                nombre_completo,
-                email,
-                tipo AS tipo_usuario,
-                'Personal' AS carrera
+        cursor.execute(
+            """
+            SELECT matricula, nombre_completo, email, tipo AS tipo_usuario, 'Personal' AS carrera
             FROM personal
             WHERE matricula = %s AND activo = 1
-        """, (matricula,))
+            """,
+            (matricula,),
+        )
         personal = cursor.fetchone()
 
         cursor.close()
         conexion.close()
         return personal
 
-    def registrar_prestamo(self, equipo_id, matricula_usuario, tipo_usuario, fecha_limite, observaciones):
+    def registrar_prestamo(
+        self, equipo_id, matricula_usuario, tipo_usuario, fecha_limite, observaciones
+    ):
         try:
             conexion, cursor = obtener_cursor()
 
-            cursor.execute("""
-                SELECT id, estado
-                FROM equipos_laboratorio
-                WHERE id = %s
-            """, (equipo_id,))
+            cursor.execute(
+                "SELECT id, estado FROM equipos_laboratorio WHERE id = %s", (equipo_id,)
+            )
             equipo = cursor.fetchone()
 
             if not equipo:
@@ -195,35 +214,34 @@ class LaboratoristaManager:
                 conexion.close()
                 return {"status": "not_available"}
 
-            cursor.execute("""
-                SELECT id
-                FROM prestamos_equipo
-                WHERE equipo_id = %s AND estado = 'activo'
-            """, (equipo_id,))
-            prestamo_activo = cursor.fetchone()
-
-            if prestamo_activo:
+            cursor.execute(
+                "SELECT id FROM prestamos_equipo WHERE equipo_id = %s AND estado = 'activo'",
+                (equipo_id,),
+            )
+            if cursor.fetchone():
                 cursor.close()
                 conexion.close()
                 return {"status": "already_loaned"}
 
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO prestamos_equipo
                 (equipo_id, matricula_usuario, tipo_usuario, fecha_limite, estado, observaciones)
                 VALUES (%s, %s, %s, %s, 'activo', %s)
-            """, (
-                equipo_id,
-                matricula_usuario,
-                tipo_usuario,
-                fecha_limite if fecha_limite != "" else None,
-                observaciones if observaciones != "" else None
-            ))
+                """,
+                (
+                    equipo_id,
+                    matricula_usuario,
+                    tipo_usuario,
+                    fecha_limite if fecha_limite != "" else None,
+                    observaciones if observaciones != "" else None,
+                ),
+            )
 
-            cursor.execute("""
-                UPDATE equipos_laboratorio
-                SET estado = 'prestado'
-                WHERE id = %s
-            """, (equipo_id,))
+            cursor.execute(
+                "UPDATE equipos_laboratorio SET estado = 'prestado' WHERE id = %s",
+                (equipo_id,),
+            )
 
             conexion.commit()
             cursor.close()
@@ -234,7 +252,7 @@ class LaboratoristaManager:
             try:
                 cursor.close()
                 conexion.close()
-            except:
+            except Exception:
                 pass
             return {"status": "error"}
 
@@ -267,10 +285,13 @@ class LaboratoristaManager:
         conexion.close()
         return datos
 
-    def generar_excel_bitacora(self, nombre_laboratorio, periodo, responsable, template_path, output_path):
+    def generar_excel_bitacora(
+        self, nombre_laboratorio, periodo, responsable, template_path, output_path
+    ):
         registros = self.obtener_historial_bitacora()
 
-        wb = load_workbook(template_path)
+        # Carga optimizada data_only=True
+        wb = load_workbook(template_path, data_only=True)
         ws = wb.active
 
         ws["B5"] = f"LABORATORIO: {nombre_laboratorio}"
@@ -279,9 +300,15 @@ class LaboratoristaManager:
         fila = 9
 
         for item in registros:
-            fecha = item["fecha_prestamo"].strftime("%d/%m/%Y") if item["fecha_prestamo"] else ""
+            fecha = (
+                item["fecha_prestamo"].strftime("%d/%m/%Y")
+                if item["fecha_prestamo"]
+                else ""
+            )
             equipo = f'{item["codigo_equipo"]} - {item["nombre_equipo"]}'
-            actividad = item["observaciones"] if item["observaciones"] else "Préstamo de equipo"
+            actividad = (
+                item["observaciones"] if item["observaciones"] else "Préstamo de equipo"
+            )
 
             ws[f"B{fila}"] = fecha
             ws[f"C{fila}"] = responsable
@@ -292,18 +319,20 @@ class LaboratoristaManager:
             ws[f"H{fila}"] = 1
             ws[f"I{fila}"] = 0
             ws[f"J{fila}"] = 0
-            ws[f"K{fila}"] = item["nombre_usuario"] if item["nombre_usuario"] else item["matricula_usuario"]
+            ws[f"K{fila}"] = (
+                item["nombre_usuario"]
+                if item["nombre_usuario"]
+                else item["matricula_usuario"]
+            )
             ws[f"L{fila}"] = ""
             ws[f"M{fila}"] = equipo
 
             fila += 1
-
             if fila > 35:
                 break
 
         wb.save(output_path)
         return output_path
-
 
     def actualizar_estado_prestamos(self):
         conexion, cursor = obtener_cursor()
@@ -321,18 +350,14 @@ class LaboratoristaManager:
 
         for prestamo in prestamos:
             if prestamo["fecha_limite"] and ahora > prestamo["fecha_limite"]:
-                cursor.execute("""
-                    UPDATE prestamos_equipo
-                    SET estado = 'vencido'
-                    WHERE id = %s
-                """, (prestamo["id"],))
-
-                cursor.execute("""
-                    UPDATE equipos_laboratorio
-                    SET estado = 'disponible'
-                    WHERE id = %s
-                """, (prestamo["equipo_id"],))
-
+                cursor.execute(
+                    "UPDATE prestamos_equipo SET estado = 'vencido' WHERE id = %s",
+                    (prestamo["id"],),
+                )
+                cursor.execute(
+                    "UPDATE equipos_laboratorio SET estado = 'disponible' WHERE id = %s",
+                    (prestamo["equipo_id"],),
+                )
                 vencidos.append(prestamo["nombre_equipo"])
 
         conexion.commit()

@@ -9,10 +9,7 @@ import mysql.connector
 def obtener_cursor():
     """Abre la conexión principal a MySQL y devuelve también un cursor tipo diccionario."""
     conexion = mysql.connector.connect(
-        host="127.0.0.1",
-        user="root",
-        password="",
-        database="itsa_qr"
+        host="127.0.0.1", user="root", password="", database="buap_proysoft"
     )
     cursor = conexion.cursor(dictionary=True)
     return conexion, cursor

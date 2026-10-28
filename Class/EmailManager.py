@@ -11,6 +11,7 @@ from email.mime.multipart import MIMEMultipart
 
 class EmailSender:
     """Encapsula el envío de correos HTML usados por el sistema."""
+
     def __init__(self):
         self.remitente = "itsa.secretaria.academica@gmail.com"
         self.clave = "xttw azfo wmdg lixy"
@@ -65,7 +66,9 @@ class EmailSender:
 
         self._enviar_html(destino, asunto, cuerpo_html)
 
-    def enviar_correo_confirmacion_password(self, destino, nombre, matricula, email_institucional):
+    def enviar_correo_confirmacion_password(
+        self, destino, nombre, matricula, email_institucional
+    ):
         logo_url = "https://itsa-qr-prueba.cyber2vuab.uk/static/resources/logo.png"
         asunto = "Confirmación de cambio de contraseña - ITSA QR"
 

@@ -69,9 +69,29 @@ función global para reutilizar alertas desde otros módulos.
         qr: {
             error: {
                 "qr_wrong": "El código QR no tiene un formato válido",
-                "qr_not_found": "No se encontró el alumno o externo"
+                "qr_not_found": "No se encontró el alumno o externo",
+                "qr_expirado": "❌ El QR ha expirado. Solicita uno nuevo al tutor",
+                "qr_ya_usado": "⚠️ Este QR ya fue usado por otro alumno. ¡Solicita un QR nuevo!",
+                "no_pertenece_grupo": "❌ No perteneces a este grupo",
+                "sesion_inactiva": "⏹️ La sesión de tutoría ya finalizó"
             },
-            success: {}
+            success: {
+                "asistencia_registrada": "✅ ¡Asistencia registrada correctamente!"
+            }
+        },
+
+        escaneo: {
+            error: {
+                "sin_camara": "❌ No se pudo acceder a la cámara",
+                "qr_no_detectado": "❌ No se pudo leer el código QR",
+                "error_conexion": "❌ Error de conexión con el servidor",
+                "formato_invalido": "❌ Formato de QR inválido"
+            },
+            info: {
+                "buscando_qr": "🔍 Buscando código QR...",
+                "alinea_qr": "📱 Alinea el QR del tutor en la cámara",
+                "procesando": "📡 Procesando QR..."
+            }
         },
 
         laboratorista: {
@@ -101,6 +121,7 @@ función global para reutilizar alertas desde otros módulos.
         let tipo = "error"
         let titulo = "Error"
 
+        // Login
         if (mensajes.login.error[codigo]) {
             mensaje = mensajes.login.error[codigo]
             tipo = "error"
@@ -113,6 +134,7 @@ función global para reutilizar alertas desde otros módulos.
             titulo = "Correcto"
         }
 
+        // Registro
         if (mensajes.registro.error[codigo]) {
             mensaje = mensajes.registro.error[codigo]
             tipo = "error"
@@ -125,6 +147,7 @@ función global para reutilizar alertas desde otros módulos.
             titulo = "Correcto"
         }
 
+        // Tutor
         if (mensajes.tutor.error[codigo]) {
             mensaje = mensajes.tutor.error[codigo]
             tipo = "error"
@@ -137,12 +160,33 @@ función global para reutilizar alertas desde otros módulos.
             titulo = "Correcto"
         }
 
+        // QR
         if (mensajes.qr.error[codigo]) {
             mensaje = mensajes.qr.error[codigo]
             tipo = "error"
             titulo = "Error"
         }
 
+        if (mensajes.qr.success[codigo]) {
+            mensaje = mensajes.qr.success[codigo]
+            tipo = "success"
+            titulo = "Correcto"
+        }
+
+        // Escaneo
+        if (mensajes.escaneo.error[codigo]) {
+            mensaje = mensajes.escaneo.error[codigo]
+            tipo = "error"
+            titulo = "Error"
+        }
+
+        if (mensajes.escaneo.info[codigo]) {
+            mensaje = mensajes.escaneo.info[codigo]
+            tipo = "info"
+            titulo = "Información"
+        }
+
+        // Laboratorista
         if (mensajes.laboratorista.error[codigo]) {
             mensaje = mensajes.laboratorista.error[codigo]
             tipo = "error"

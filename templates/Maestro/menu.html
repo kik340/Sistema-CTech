@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menú Maestro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/CSS/tutor.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+</head>
+
+<body>
+    <div class="contenedor">
+
+        <div class="topbar">
+            <h1>Bienvenido(a), Prof(a). {{ nombre }}</h1>
+
+            <div class="menu-superior">
+                <button type="button" class="btn-menu activo" data-seccion="seccionQrRotativo">QR Rotativo (Pase de
+                    Lista)</button>
+                <button type="button" class="btn-menu" data-seccion="seccionGrupos">Mis Grupos</button>
+                <button type="button" class="btn-menu" data-seccion="seccionQr">Escanear Alumno Individual</button>
+                <button type="button" class="btn-menu" data-seccion="seccionModificarUsuario">Modificar
+                    Contraseña</button>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 1: QR ROTATIVO PARA PASE DE LISTA -->
+        <div id="seccionQrRotativo" class="seccion-panel activa">
+            <h2>🔄 QR Rotativo para Pase de Lista</h2>
+            <p>Genera un código QR dinámico para proyectar en clase. Los alumnos lo escanearán para registrar su
+                asistencia.<br>
+                <strong>¡El código QR se actualiza automáticamente en cada escaneo!</strong>
+            </p>
+
+            {% if grupos %}
+            <div class="qr-rotativo-container">
+                <div class="form-grupo">
+                    <label for="selectGrupoRotativo"><strong>Selecciona la asignatura / grupo:</strong></label>
+                    <select id="selectGrupoRotativo" class="select-grupo">
+                        <option value="">-- Selecciona un grupo --</option>
+                        {% for g in grupos %}
+                        <option value="{{ g.id }}">
+                            {{ g.materia }} - Grupo {{ g.grupo }} ({{ g.semestre }}° Semestre)
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-grupo">
+                    <label for="selectParcial"><strong>Parcial activo:</strong></label>
+                    <select id="selectParcial" class="select-parcial">
+                        <option value="1">1er Parcial</option>
+                        <option value="2">2do Parcial</option>
+                        <option value="3">3er Parcial</option>
+                        <option value="4">4to Parcial</option>
+                    </select>
+                </div>
+
+                <div id="qrRotativoInfo" style="display: none;">
+                    <div class="qr-visualizacion">
+                        <div class="qr-grande">
+                            <img id="qrRotativoImg" src="" alt="QR Rotativo">
+                            <div class="qr-estado" id="qrEstado">
+                                <span class="estado-activo">🔴 Esperando iniciar sesión...</span>
+                            </div>
+                        </div>
+
+                        <div class="qr-estadisticas">
+                            <div class="estadistica">
+                                <span class="numero" id="totalAsistencias">0</span>
+                                <span class="label">Asistencias registradas</span>
+                            </div>
+                            <div class="estadistica">
+                                <span class="numero" id="totalAlumnosGrupo">0</span>
+                                <span class="label">Alumnos inscritos</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="qr-controles">
+                        <button id="btnIniciarSesionQR" class="btn btn-success">▶️ Iniciar pase de lista</button>
+                        <button id="btnDetenerSesionQR" class="btn btn-danger" style="display: none;">⏹️ Finalizar pase
+                            de lista</button>
+                        <button id="btnActualizarQR" class="btn btn-warning" style="display: none;">🔄 Regenerar
+                            QR</button>
+                    </div>
+
+                    <div class="qr-lista-asistencias">
+                        <h4>📝 Registro en tiempo real</h4>
+                        <div id="listaAsistenciasRotativo" class="lista-asistencias">
+                            <p class="texto-vacio">Aún no hay asistencias registradas</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="card aviso-vacio">
+                <p>No tienes asignaturas o grupos asignados para este periodo escolar.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- SECCIÓN 2: MIS GRUPOS Y ALUMNOS INSCRITOS -->
+        <div id="seccionGrupos" class="seccion-panel">
+            <h2>Mis Grupos Asignados</h2>
+
+            {% if grupos %}
+            {% for g in grupos %}
+            <div class="card">
+                <div class="grupo-info">
+                    <p><strong>Materia:</strong> {{ g.materia }}</p>
+                    <p><strong>Carrera:</strong> {{ g.carrera }}</p>
+                    <p><strong>Semestre:</strong> {{ g.semestre }}</p>
+                    <p><strong>Grupo:</strong> {{ g.grupo }}</p>
+                    <p><strong>Turno:</strong> {{ g.turno }}</p>
+                    <p><strong>Periodo:</strong> {{ g.periodo }}</p>
+                </div>
+
+                {% if g.alumnos %}
+                <div class="lista-admin">
+                    <h4>Alumnos inscritos ({{ g.alumnos|length }})</h4>
+                    {% for a in g.alumnos %}
+                    <div class="card tarjeta-interna">
+                        <p><strong>Matrícula:</strong> {{ a.matricula }}</p>
+                        <p><strong>Nombre:</strong> {{ a.nombre_completo }}</p>
+                        <p><strong>Correo:</strong> {{ a.email }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p><strong>Alumnos del grupo:</strong> Aún no hay alumnos asignados a esta materia.</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+            {% else %}
+            <p>No tienes grupos asignados actualmente.</p>
+            {% endif %}
+        </div>
+
+        <!-- SECCIÓN 3: ESCANEAR QR INDIVIDUAL -->
+        <div id="seccionQr" class="seccion-panel">
+            <h2>Lectura de QR Individual de Estudiante</h2>
+            <p>Permite validar la credencial digital o QR del alumno.</p>
+
+            <div class="acciones acciones-qr">
+                <button type="button" class="btn btn-escaner" id="btnModoLector">Usar lector físico / teclado</button>
+
+                <div id="contenedorQrManual" style="display: none;">
+                    <input type="text" id="qrKeyboardInput" class="input-qr"
+                        placeholder="Escanea con el lector o pega el contenido del QR" autocomplete="off">
+                    <button type="button" class="btn btn-escaner" id="btnProcesarQrManual">Procesar código</button>
+                </div>
+            </div>
+
+            <div id="reader"></div>
+
+            <div id="resultadoAlumno" style="display: none;">
+                <h3>Información del Estudiante</h3>
+                <p><strong>Matrícula:</strong> <span id="resMatricula"></span></p>
+                <p><strong>Nombre:</strong> <span id="resNombre"></span></p>
+                <p><strong>Correo:</strong> <span id="resEmail"></span></p>
+                <p><strong>Carrera:</strong> <span id="resCarrera"></span></p>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 4: MODIFICAR CONTRASEÑA -->
+        <div id="seccionModificarUsuario" class="seccion-panel">
+            <h2>Cambiar Contraseña</h2>
+
+            <form action="{{ url_for('auth.modificar_mi_usuario') }}" method="post" class="form-admin">
+                <div class="grid-form">
+                    <div class="campo">
+                        <label>Matrícula / N° Empleado</label>
+                        <input type="text" value="{{ datos_usuario.matricula if datos_usuario else '' }}" readonly>
+                    </div>
+
+                    <div class="campo">
+                        <label>Nombre</label>
+                        <input type="text" value="{{ datos_usuario.nombre if datos_usuario else '' }}" readonly>
+                    </div>
+
+                    <div class="campo campo-completo">
+                        <label for="nueva_password">Nueva contraseña</label>
+                        <input type="password" id="nueva_password" name="nueva_password"
+                            placeholder="Ingresa la nueva contraseña" required autocomplete="new-password">
+                    </div>
+
+                    <div class="campo campo-completo">
+                        <label for="confirmar_password">Confirmar nueva contraseña</label>
+                        <input type="password" id="confirmar_password" name="confirmar_password"
+                            placeholder="Confirma la nueva contraseña" required autocomplete="new-password">
+                    </div>
+                </div>
+
+                <div class="acciones">
+                    <button type="submit" class="btn btn-parcial">Actualizar contraseña</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="footer-acciones">
+            <a class="btn btn-cerrar" href="{{ url_for('auth.cerrar_sesion') }}">Cerrar sesión</a>
+        </div>
+
+    </div>
+
+    <script src="{{ url_for('static', filename='assets/JS/alertas.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/JS/tutor.js') }}"></script>
+</body>
+
+</html>

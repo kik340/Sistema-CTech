@@ -1,9 +1,11 @@
 /*
-Lógica del panel de tutor.
+Lógica del panel del maestro / docente.
 
 Se encarga de la navegación interna por secciones, del lector QR con cámara o
-entrada manual, y de mostrar los datos del alumno o externo detectado para las
-acciones del tutor.
+entrada manual, y de mostrar los datos del alumno detectado.
+
+Además, incluye la funcionalidad de QR Rotativo (el maestro genera QR, los alumnos escanean)
+que cambia automáticamente después de cada escaneo.
 */
 
 (function () {
@@ -21,6 +23,10 @@ acciones del tutor.
             document.getElementById(destino).classList.add("activa")
         })
     })
+
+    // =====================================================
+    // ESCÁNER QR PARA LEER QR DE ALUMNOS
+    // =====================================================
 
     const btnCargarCamaras = document.getElementById("btnCargarCamaras")
     const btnIniciarEscaner = document.getElementById("btnIniciarEscaner")
@@ -45,8 +51,6 @@ acciones del tutor.
     let listaCamaras = []
     let bloqueoLectura = false
 
-    /* Muestra una alerta reutilizable para mensajes del sistema. */
-
     function mostrarAlerta(icon, title, text) {
         if (typeof Swal !== "undefined") {
             Swal.fire({
@@ -60,8 +64,6 @@ acciones del tutor.
         }
     }
 
-    /* Valida si el navegador soporta acceso a cámara. */
-
     function soportaCamara() {
         return !!(
             navigator.mediaDevices &&
@@ -70,13 +72,10 @@ acciones del tutor.
         )
     }
 
-    /* Oculta y limpia el bloque donde se muestran los datos del alumno leído. */
-
     function limpiarResultado() {
         if (resultadoAlumno) {
             resultadoAlumno.style.display = "none"
         }
-
         if (resMatricula) resMatricula.textContent = ""
         if (resNombre) resNombre.textContent = ""
         if (resEmail) resEmail.textContent = ""
@@ -84,13 +83,10 @@ acciones del tutor.
         if (resCorreoQr) resCorreoQr.textContent = ""
     }
 
-    /* Pinta en pantalla la información obtenida después de leer un QR. */
-
     function mostrarResultado(data) {
         if (resultadoAlumno) {
             resultadoAlumno.style.display = "block"
         }
-
         if (resMatricula) resMatricula.textContent = data.alumno.matricula || ""
         if (resNombre) resNombre.textContent = data.alumno.nombre || ""
         if (resEmail) resEmail.textContent = data.alumno.email || ""
@@ -98,15 +94,11 @@ acciones del tutor.
         if (resCorreoQr) resCorreoQr.textContent = data.correo_qr || ""
     }
 
-    /* Oculta los controles relacionados con la cámara cuando no se pueden usar. */
-
     function ocultarControlesCamara() {
         if (selectCamara) selectCamara.style.display = "none"
         if (btnIniciarEscaner) btnIniciarEscaner.style.display = "none"
         if (btnDetenerEscaner) btnDetenerEscaner.style.display = "none"
     }
-
-    /* Vuelve visibles los controles de cámara cuando ya hay permisos y dispositivos. */
 
     function mostrarControlesCamara() {
         if (selectCamara) selectCamara.style.display = "inline-block"
@@ -160,7 +152,6 @@ acciones del tutor.
                 option.value = ""
                 option.textContent = "No se encontraron cámaras"
                 selectCamara.appendChild(option)
-
                 ocultarControlesCamara()
                 mostrarAlerta("warning", "Cámara", "No se encontraron cámaras disponibles")
                 return
@@ -169,22 +160,18 @@ acciones del tutor.
             listaCamaras.forEach((camara, index) => {
                 const option = document.createElement("option")
                 option.value = camara.deviceId
-
                 if (camara.label && camara.label.trim() !== "") {
                     option.textContent = camara.label
                 } else {
                     option.textContent = "Cámara " + (index + 1)
                 }
-
                 selectCamara.appendChild(option)
             })
 
             mostrarControlesCamara()
-
             if (btnCargarCamaras) {
                 btnCargarCamaras.style.display = "none"
             }
-
             mostrarAlerta("success", "Cámara", "Cámaras cargadas correctamente")
         } catch (error) {
             console.error("Error al enumerar cámaras:", error)
@@ -192,8 +179,6 @@ acciones del tutor.
             mostrarAlerta("error", "Cámara", "No se pudieron listar las cámaras")
         }
     }
-
-    /* Detiene el lector QR activo y limpia su estado interno. */
 
     function detenerEscaner() {
         return new Promise((resolve) => {
@@ -246,10 +231,8 @@ acciones del tutor.
                 (qrCodeMessage) => {
                     procesarQr(qrCodeMessage, true)
                 },
-                () => {
-                }
+                () => {}
             )
-
             escanerActivo = true
             mostrarAlerta("success", "Escáner", "Escáner iniciado correctamente")
         } catch (error) {
@@ -263,37 +246,20 @@ acciones del tutor.
     function buscarAlumnoPorQr(contenidoQr) {
         return fetch("/buscar_alumno_qr", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                contenido_qr: contenidoQr
-            })
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ contenido_qr: contenidoQr })
         })
         .then(async (response) => {
             const data = await response.json()
-            return {
-                ok: response.ok,
-                status: response.status,
-                data: data
-            }
+            return { ok: response.ok, status: response.status, data: data }
         })
     }
 
     function procesarQr(texto, detenerCamaraAlLeer) {
         const contenidoQr = (texto || "").trim()
-
-        if (contenidoQr === "") {
-            return
-        }
-
-        if (bloqueoLectura) {
-            return
-        }
-
-        if (contenidoQr === ultimoTexto) {
-            return
-        }
+        if (contenidoQr === "") return
+        if (bloqueoLectura) return
+        if (contenidoQr === ultimoTexto) return
 
         bloqueoLectura = true
         ultimoTexto = contenidoQr
@@ -305,11 +271,9 @@ acciones del tutor.
                 if (data.status === "ok") {
                     mostrarResultado(data)
                     mostrarAlerta("success", "Alumno encontrado", "Se encontró al estudiante correctamente")
-
                     if (detenerCamaraAlLeer) {
                         detenerEscaner()
                     }
-
                     return
                 }
 
@@ -328,10 +292,7 @@ acciones del tutor.
                 mostrarAlerta("error", "Error", "Falló la consulta al servidor")
             })
             .finally(() => {
-                if (qrKeyboardInput) {
-                    qrKeyboardInput.value = ""
-                }
-
+                if (qrKeyboardInput) qrKeyboardInput.value = ""
                 setTimeout(() => {
                     bloqueoLectura = false
                     ultimoTexto = ""
@@ -342,7 +303,6 @@ acciones del tutor.
     if (btnModoLector && contenedorQrManual && qrKeyboardInput) {
         btnModoLector.addEventListener("click", () => {
             const visible = contenedorQrManual.style.display === "block"
-
             if (visible) {
                 contenedorQrManual.style.display = "none"
                 btnModoLector.textContent = "Usar lector físico"
@@ -350,9 +310,7 @@ acciones del tutor.
             } else {
                 contenedorQrManual.style.display = "block"
                 btnModoLector.textContent = "Ocultar lector físico"
-                setTimeout(() => {
-                    qrKeyboardInput.focus()
-                }, 100)
+                setTimeout(() => { qrKeyboardInput.focus() }, 100)
             }
         })
     }
@@ -361,7 +319,6 @@ acciones del tutor.
         btnProcesarQrManual.addEventListener("click", () => {
             procesarQr(qrKeyboardInput.value, false)
         })
-
         qrKeyboardInput.addEventListener("keydown", (e) => {
             if (e.key === "Enter") {
                 e.preventDefault()
@@ -373,11 +330,9 @@ acciones del tutor.
     if (btnCargarCamaras) {
         btnCargarCamaras.addEventListener("click", cargarCamaras)
     }
-
     if (btnIniciarEscaner) {
         btnIniciarEscaner.addEventListener("click", iniciarEscaner)
     }
-
     if (btnDetenerEscaner) {
         btnDetenerEscaner.addEventListener("click", () => {
             detenerEscaner().then(() => {
@@ -387,10 +342,291 @@ acciones del tutor.
     }
 
     ocultarControlesCamara()
+    if (contenedorQrManual) contenedorQrManual.style.display = "none"
+    limpiarResultado()
 
-    if (contenedorQrManual) {
-        contenedorQrManual.style.display = "none"
+    // =====================================================
+    // QR ROTATIVO (MAESTRO GENERA QR, ALUMNOS ESCANEAN)
+    // =====================================================
+
+    let intervaloQR = null
+    let sesionActivaQR = false
+    let sesionIdActivo = null
+
+    const selectGrupoRotativo = document.getElementById("selectGrupoRotativo")
+    const qrRotativoInfo = document.getElementById("qrRotativoInfo")
+    const qrRotativoImg = document.getElementById("qrRotativoImg")
+    const btnIniciarSesionQR = document.getElementById("btnIniciarSesionQR")
+    const btnDetenerSesionQR = document.getElementById("btnDetenerSesionQR")
+    const btnActualizarQR = document.getElementById("btnActualizarQR")
+    const totalAsistenciasSpan = document.getElementById("totalAsistencias")
+    const totalAlumnosGrupo = document.getElementById("totalAlumnosGrupo")
+    const listaAsistenciasRotativo = document.getElementById("listaAsistenciasRotativo")
+    const qrEstado = document.getElementById("qrEstado")
+
+    async function cargarInfoGrupo() {
+        const grupoId = selectGrupoRotativo ? selectGrupoRotativo.value : null
+        if (!grupoId) {
+            if (qrRotativoInfo) qrRotativoInfo.style.display = "none"
+            return
+        }
+
+        if (qrRotativoInfo) qrRotativoInfo.style.display = "block"
+
+        try {
+            const response = await fetch(`/maestro/obtener_info_grupo/${grupoId}`)
+            const data = await response.json()
+            if (data.status === "ok" && totalAlumnosGrupo) {
+                totalAlumnosGrupo.textContent = data.total_alumnos
+            } else if (totalAlumnosGrupo) {
+                totalAlumnosGrupo.textContent = "Cargando..."
+            }
+        } catch (error) {
+            console.error("Error al cargar información del grupo:", error)
+            if (totalAlumnosGrupo) totalAlumnosGrupo.textContent = "Error"
+        }
     }
 
-    limpiarResultado()
-})()
+    async function iniciarSesionQR() {
+        const grupoId = selectGrupoRotativo ? selectGrupoRotativo.value : null;
+        const parcial = document.getElementById('selectParcial') ? document.getElementById('selectParcial').value : '1';
+        
+        if (!grupoId) {
+            if (typeof Swal !== "undefined") {
+                Swal.fire({
+                    icon: "warning",
+                    title: "Selecciona un grupo",
+                    text: "Debes seleccionar un grupo antes de iniciar la sesión"
+                });
+            }
+            return;
+        }
+
+        if (typeof Swal !== "undefined") {
+            Swal.fire({
+                title: "Iniciando sesión...",
+                text: "Por favor espera",
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+        }
+
+        try {
+            const response = await fetch(`/maestro/iniciar_sesion_qr/${grupoId}`, {
+                method: "POST",
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ parcial: parcial })
+            });
+            const data = await response.json();
+
+            if (data.status === "ok") {
+                sesionIdActivo = data.sesion_id;
+                sesionActivaQR = true;
+
+                if (typeof Swal !== "undefined") {
+                    Swal.fire({
+                        icon: "success",
+                        title: "Sesión iniciada",
+                        text: data.message,
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                }
+
+                if (btnIniciarSesionQR) btnIniciarSesionQR.style.display = "none";
+                if (btnDetenerSesionQR) btnDetenerSesionQR.style.display = "inline-block";
+                if (btnActualizarQR) btnActualizarQR.style.display = "inline-block";
+
+                cargarQRRotativo();
+                cargarAsistenciasRotativo();
+
+                if (intervaloQR) clearInterval(intervaloQR);
+                intervaloQR = setInterval(() => {
+                    if (sesionActivaQR) {
+                        cargarQRRotativo();
+                        cargarAsistenciasRotativo();
+                    }
+                }, 5000);
+            } else {
+                if (typeof Swal !== "undefined") {
+                    Swal.fire({
+                        icon: "error",
+                        title: "Error",
+                        text: data.message || "No se pudo iniciar la sesión"
+                    });
+                }
+            }
+        } catch (error) {
+            console.error("Error al iniciar sesión QR:", error);
+            if (typeof Swal !== "undefined") {
+                Swal.fire({
+                    icon: "error",
+                    title: "Error",
+                    text: "Error de conexión con el servidor"
+                });
+            }
+        }
+    }
+
+    async function cargarQRRotativo() {
+        if (!sesionActivaQR || !sesionIdActivo) return
+
+        try {
+            const response = await fetch(`/maestro/obtener_qr_sesion/${sesionIdActivo}`)
+            const data = await response.json()
+
+            if (data.status === "ok") {
+                if (qrRotativoImg) qrRotativoImg.src = `data:image/png;base64,${data.qr_base64}`
+                if (totalAsistenciasSpan) totalAsistenciasSpan.textContent = data.total_asistencias
+
+                if (qrEstado) {
+                    if (data.activa) {
+                        qrEstado.innerHTML = '<span class="estado-activo">🟢 Sesión activa - Escaneando...</span>'
+                    } else {
+                        qrEstado.innerHTML = '<span class="estado-inactivo">🔴 Sesión finalizada</span>'
+                    }
+                }
+            } else if (data.status === "sesion_terminada") {
+                sesionActivaQR = false
+                if (intervaloQR) clearInterval(intervaloQR)
+                if (qrEstado) qrEstado.innerHTML = '<span class="estado-inactivo">⏹️ Sesión finalizada</span>'
+                if (btnIniciarSesionQR) btnIniciarSesionQR.style.display = "inline-block"
+                if (btnDetenerSesionQR) btnDetenerSesionQR.style.display = "none"
+                if (btnActualizarQR) btnActualizarQR.style.display = "none"
+            }
+        } catch (error) {
+            console.error("Error al cargar QR:", error)
+            if (qrEstado) {
+                qrEstado.innerHTML = '<span class="estado-inactivo">❌ Error al cargar QR</span>'
+            }
+        }
+    }
+
+    async function cargarAsistenciasRotativo() {
+        if (!sesionIdActivo) return
+
+        try {
+            const response = await fetch(`/maestro/obtener_asistencias_sesion/${sesionIdActivo}`)
+            const data = await response.json()
+
+            if (listaAsistenciasRotativo) {
+                if (data.status === "ok" && data.asistencias && data.asistencias.length > 0) {
+                    const html = data.asistencias.map(a => `
+                        <div class="asistencia-item">
+                            <span class="asistencia-nombre">👤 ${a.nombre || a.nombre_completo || a.alumno_nombre || 'Alumno'}</span>
+                            <span class="asistencia-matricula">📋 ${a.matricula || a.alumno_matricula || ''}</span>
+                            <span class="asistencia-hora">⏰ ${a.hora || a.fecha_asistencia || ''}</span>
+                        </div>
+                    `).join("")
+                    listaAsistenciasRotativo.innerHTML = html
+                } else {
+                    listaAsistenciasRotativo.innerHTML = '<p class="texto-vacio">Aún no hay asistencias registradas</p>'
+                }
+            }
+        } catch (error) {
+            console.error("Error al cargar asistencias:", error)
+        }
+    }
+
+    async function detenerSesionQR() {
+        if (!sesionIdActivo) return
+
+        if (typeof Swal !== "undefined") {
+            Swal.fire({
+                title: "¿Detener sesión?",
+                text: "Los alumnos ya no podrán escanear el QR",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#b30000",
+                confirmButtonText: "Sí, detener",
+                cancelButtonText: "Cancelar"
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    await ejecutarDetenerSesion()
+                }
+            })
+        } else {
+            await ejecutarDetenerSesion()
+        }
+    }
+
+    async function ejecutarDetenerSesion() {
+        try {
+            const response = await fetch(`/maestro/detener_sesion_qr/${sesionIdActivo}`, { method: "POST" })
+            const data = await response.json()
+
+            if (data.status === "ok") {
+                sesionActivaQR = false
+                if (intervaloQR) clearInterval(intervaloQR)
+
+                if (typeof Swal !== "undefined") {
+                    Swal.fire({
+                        icon: "success",
+                        title: "Sesión detenida",
+                        text: data.message,
+                        timer: 2000,
+                        showConfirmButton: false
+                    })
+                }
+
+                if (btnIniciarSesionQR) btnIniciarSesionQR.style.display = "inline-block"
+                if (btnDetenerSesionQR) btnDetenerSesionQR.style.display = "none"
+                if (btnActualizarQR) btnActualizarQR.style.display = "none"
+                if (qrEstado) qrEstado.innerHTML = '<span class="estado-inactivo">⏹️ Sesión finalizada</span>'
+                sesionIdActivo = null
+            }
+        } catch (error) {
+            console.error("Error al detener sesión:", error)
+        }
+    }
+
+    async function actualizarQRManual() {
+        if (sesionActivaQR && sesionIdActivo) {
+            await cargarQRRotativo()
+            if (typeof Swal !== "undefined") {
+                Swal.fire({
+                    icon: "success",
+                    title: "QR actualizado",
+                    text: "El código QR ha sido renovado",
+                    timer: 1500,
+                    showConfirmButton: false
+                })
+            }
+        }
+    }
+
+    if (selectGrupoRotativo) {
+        selectGrupoRotativo.addEventListener("change", function() {
+            cargarInfoGrupo()
+            if (sesionActivaQR) {
+                if (typeof Swal !== "undefined") {
+                    Swal.fire({
+                        icon: "info",
+                        title: "Grupo cambiado",
+                        text: "La sesión anterior se ha cerrado. Inicia una nueva sesión para el grupo seleccionado.",
+                        timer: 2000
+                    })
+                }
+                sesionActivaQR = false
+                sesionIdActivo = null
+                if (intervaloQR) clearInterval(intervaloQR)
+                if (btnIniciarSesionQR) btnIniciarSesionQR.style.display = "inline-block"
+                if (btnDetenerSesionQR) btnDetenerSesionQR.style.display = "none"
+                if (btnActualizarQR) btnActualizarQR.style.display = "none"
+                if (qrEstado) qrEstado.innerHTML = '<span class="estado-activo">🔴 Esperando iniciar sesión...</span>'
+                if (qrRotativoImg) qrRotativoImg.src = ""
+                if (totalAsistenciasSpan) totalAsistenciasSpan.textContent = "0"
+                if (listaAsistenciasRotativo) listaAsistenciasRotativo.innerHTML = '<p class="texto-vacio">Aún no hay asistencias registradas</p>'
+            }
+        })
+    }
+    if (btnIniciarSesionQR) {
+        btnIniciarSesionQR.addEventListener("click", iniciarSesionQR)
+    }
+    if (btnDetenerSesionQR) {
+        btnDetenerSesionQR.addEventListener("click", detenerSesionQR)
+    }
+    if (btnActualizarQR) {
+        btnActualizarQR.addEventListener("click", actualizarQRManual)
+    }
+})();

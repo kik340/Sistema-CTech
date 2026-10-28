@@ -265,3 +265,214 @@ p {
         flex-direction: column;
     }
 }
+/* =====================================================
+   ESTILOS PARA QR ROTATIVO
+   ===================================================== */
+
+.qr-rotativo-container {
+    margin-top: 20px;
+}
+
+.form-grupo {
+    margin-bottom: 20px;
+}
+
+.select-grupo {
+    width: 100%;
+    max-width: 400px;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    font-size: 14px;
+    background: white;
+}
+
+.qr-visualizacion {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+    align-items: flex-start;
+    margin-bottom: 25px;
+}
+
+.qr-grande {
+    text-align: center;
+    flex: 1;
+    min-width: 250px;
+}
+
+.qr-grande img {
+    width: 250px;
+    height: 250px;
+    border: 3px solid #cc0000;
+    border-radius: 20px;
+    padding: 15px;
+    background: white;
+}
+
+.qr-estado {
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+.estado-activo {
+    color: #198754;
+    background: #d1e7dd;
+    padding: 5px 12px;
+    border-radius: 20px;
+    display: inline-block;
+}
+
+.estado-inactivo {
+    color: #dc3545;
+    background: #f8d7da;
+    padding: 5px 12px;
+    border-radius: 20px;
+    display: inline-block;
+}
+
+.qr-estadisticas {
+    flex: 1;
+    min-width: 200px;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.estadistica {
+    background: #f8f9fa;
+    padding: 15px 20px;
+    border-radius: 15px;
+    text-align: center;
+    min-width: 120px;
+}
+
+.estadistica .numero {
+    font-size: 32px;
+    font-weight: bold;
+    color: #cc0000;
+    display: block;
+}
+
+.estadistica .label {
+    font-size: 12px;
+    color: #666;
+}
+
+.qr-controles {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 20px 0;
+}
+
+.btn-success {
+    background: #198754;
+}
+
+.btn-success:hover {
+    background: #146c43;
+}
+
+.btn-danger {
+    background: #dc3545;
+}
+
+.btn-danger:hover {
+    background: #bb2d3b;
+}
+
+.btn-warning {
+    background: #ffc107;
+    color: #000;
+}
+
+.btn-warning:hover {
+    background: #e0a800;
+}
+
+.qr-instrucciones {
+    background: #e9ecef;
+    padding: 15px 20px;
+    border-radius: 12px;
+    margin: 20px 0;
+}
+
+.qr-instrucciones h4 {
+    margin: 0 0 10px 0;
+    color: #cc0000;
+}
+
+.qr-instrucciones ol {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.qr-instrucciones li {
+    margin: 5px 0;
+}
+
+.qr-lista-asistencias {
+    margin-top: 20px;
+}
+
+.lista-asistencias {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    background: #fafafa;
+}
+
+.asistencia-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.asistencia-item:last-child {
+    border-bottom: none;
+}
+
+.asistencia-nombre {
+    font-weight: bold;
+    color: #333;
+}
+
+.asistencia-matricula {
+    color: #666;
+    font-size: 12px;
+}
+
+.asistencia-hora {
+    color: #999;
+    font-size: 11px;
+}
+
+.texto-vacio {
+    text-align: center;
+    padding: 30px;
+    color: #999;
+}
+
+/* Responsive */
+@media (max-width: 700px) {
+    .qr-visualizacion {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .qr-grande img {
+        width: 200px;
+        height: 200px;
+    }
+
+    .asistencia-item {
+        flex-direction: column;
+        text-align: center;
+    }
+}

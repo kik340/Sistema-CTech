@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seguimiento Académico</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #f4f4f4;
+        }
+
+        .contenedor {
+            max-width: 1400px;
+            margin: auto;
+            background: white;
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .tabla-wrap {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            min-width: 1600px;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+            vertical-align: top;
+        }
+
+        th {
+            background: #cc0000;
+            color: white;
+        }
+
+        td input,
+        td textarea {
+            width: 100%;
+            padding: 6px;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .acciones {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 14px;
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+            cursor: pointer;
+            color: white;
+            font-weight: bold;
+        }
+
+        .btn-guardar {
+            background: #198754;
+        }
+
+        .btn-volver {
+            background: #111;
+        }
+
+        .btn-pdf {
+            background: #b30000;
+        }
+
+        .btn-excel {
+            background: #1d6f42;
+        }
+
+        .bloque-observaciones {
+            margin-top: 20px;
+        }
+
+        .info-grupo {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ccc;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .tab-btn.activo {
+            color: #cc0000;
+            border-bottom: 2px solid #cc0000;
+        }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.activo {
+            display: block;
+        }
+
+        .actividades-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .actividad-card {
+            background: #fafafa;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .actividad-card h4 {
+            margin: 0 0 10px 0;
+            color: #cc0000;
+        }
+
+        .actividad-card img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .form-actividad {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+
+        .form-actividad input,
+        .form-actividad textarea {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+        }
+
+        .btn-actividad {
+            background: #0d6efd;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="contenedor">
+        <h1>Seguimiento académico</h1>
+        <div class="info-grupo">
+            <p><strong>Grupo ID:</strong> {{ seguimiento.grupo_id }}</p>
+            <p><strong>Parcial:</strong> {{ seguimiento.parcial }}</p>
+            <p><strong>Total estudiantes:</strong> {{ seguimiento.total_estudiantes }}</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn activo" data-tab="datos">Datos académicos</button>
+            <button class="tab-btn" data-tab="actividades">Actividades de tutoría</button>
+        </div>
+
+        <div id="tab-datos" class="tab-panel activo">
+            <form action="{{ url_for('tutor.guardar_seguimiento') }}" method="post" id="seguimientoForm">
+                <input type="hidden" name="seguimiento_id" value="{{ seguimiento.id }}">
+                <input type="hidden" name="grupo_id" value="{{ seguimiento.grupo_id }}">
+                <input type="hidden" name="parcial" value="{{ seguimiento.parcial }}">
+                <input type="hidden" name="periodo" value="Enero - Junio 2026">
+                <input type="hidden" name="division"
+                    value="{{ seguimiento.division if seguimiento.division else 'Ingeniería Industrial' }}">
+                <input type="hidden" name="persona_tutora" value="{{ session.nombre }}">
+                <input type="hidden" name="grupo_letra"
+                    value="{{ seguimiento.grupo_letra if seguimiento.grupo_letra else 'A' }}">
+
+                <div class="tabla-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Matrícula</th>
+                                <th>Nombre</th>
+                                <th>Sexo</th>
+                                <th>Asistencia</th>
+                                <th>Canalización</th>
+                                <th>Prob. económicos</th>
+                                <th>Prob. salud</th>
+                                <th>Prob. emocionales</th>
+                                <th>Prob. familiares</th>
+                                <th>Prob. académicos</th>
+                                <th>Beca JCF</th>
+                                <th>Beca manutención</th>
+                                <th>Beca JMF</th>
+                                <th>Otra beca</th>
+                                <th>Apoyo psicológico</th>
+                                <th>Apoyo médico</th>
+                                <th>Otro apoyo</th>
+                                <th>Promedio</th>
+                                <th>Reprobadas</th>
+                                <th>Aprobado</th>
+                                <th>Posible deserción</th>
+                                <th>Entregó actividad</th>
+                                <th>Comentario</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for a in alumnos %}
+                            {% set d = detalle_map.get(a.matricula) %}
+                            <tr>
+                                <td>{{ a.matricula }}<input type="hidden" name="alumno_matricula"
+                                        value="{{ a.matricula }}"><input type="hidden" name="genero_{{ a.matricula }}"
+                                        value="{{ a.genero if a.genero else 'M' }}"></td>
+                                <td>{{ a.nombre_completo }}<input type="hidden" name="nombre_{{ a.matricula }}"
+                                        value="{{ a.nombre_completo }}"></td>
+                                <td>{{ a.genero if a.genero else 'M' }}</td>
+                                <td><input type="checkbox" name="asistencia_{{ a.matricula }}" value="1" {% if d and
+                                        d.asistencia==1 %}checked{% endif %}></td>
+                                <td><input type="checkbox" name="canalizacion_{{ a.matricula }}" value="1" {% if d and
+                                        d.canalizacion_tutoria_individual==1 %}checked{% endif %}></td>
+                                <td><input type="checkbox" name="prob_economicos_{{ a.matricula }}" value="1" {% if d
+                                        and d.problemas_economicos==1 %}checked{% endif %}></td>
+                                <td><input type="checkbox" name="prob_salud_{{ a.matricula }}" value="1" {% if d and
+                                        d.problemas_salud==1 %}checked{% endif %}></td>
+                                <td><input type="checkbox" name="prob_emocionales_{{ a.matricula }}" value="1" {% if d
+                                        and d.problemas_emocionales==1 %}checked{% endif %}></td>
+                                <td><input type="checkbox" name="prob_familiares_{{ a.matricula }}" value="1" {% if d
+                                        and d.problemas_familiares==1 %}checked{% endif %}></td>
+                                <td><input type="checkbox" name="prob_academicos_{{ a.matricula }}" value="1" {% if d
+                                        and d.problemas_academicos==1 %}checked{% endif %}></td>
+                                <td><input type="checkbox" name="beca_jcf_{{ a.matricula }}" value="1" {% if d and
+                                        d.beca_jcf==1 %}checked{% endif %}></td>
+                                <td><input type="checkbox" name="beca_manutencion_{{ a.matricula }}" value="1" {% if d
+                                        and d.beca_manutencion==1 %}checked{% endif %}></td>
+                                <td><input type="checkbox" name="beca_jmf_{{ a.matricula }}" value="1" {% if d and
+                                        d.beca_jmf==1 %}checked{% endif %}></td>
+                                <td><input type="checkbox" name="beca_otro_{{ a.matricula }}" value="1" {% if d and
+                                        d.beca_otro==1 %}checked{% endif %}></td>
+                                <td><input type="checkbox" name="apoyo_psicologico_{{ a.matricula }}" value="1" {% if d
+                                        and d.apoyo_psicologico==1 %}checked{% endif %}></td>
+                                <td><input type="checkbox" name="apoyo_medico_{{ a.matricula }}" value="1" {% if d and
+                                        d.apoyo_medico==1 %}checked{% endif %}></td>
+                                <td><input type="checkbox" name="apoyo_otro_{{ a.matricula }}" value="1" {% if d and
+                                        d.apoyo_otro==1 %}checked{% endif %}></td>
+                                <td><input type="text" name="promedio_{{ a.matricula }}"
+                                        value="{{ d.promedio if d and d.promedio is not none else '' }}"
+                                        style="width:60px;"></td>
+                                <td><input type="number" name="reprobadas_{{ a.matricula }}"
+                                        value="{{ d.materias_reprobadas if d else 0 }}" min="0" style="width:50px;">
+                                </td>
+                                <td><input type="checkbox" name="aprobado_{{ a.matricula }}" value="1" {% if d and
+                                        d.estatus_aprobado==1 %}checked{% endif %}></td>
+                                <td><input type="checkbox" name="desercion_{{ a.matricula }}" value="1" {% if d and
+                                        d.posible_desercion==1 %}checked{% endif %}></td>
+                                <td style="text-align:center;"><input type="checkbox"
+                                        name="entrego_actividad_{{ a.matricula }}" value="1" {% if d and
+                                        d.entrego_actividad==1 %}checked{% endif %}></td>
+                                <td><textarea name="comentario_{{ a.matricula }}"
+                                        rows="2">{{ d.comentario if d and d.comentario else '' }}</textarea></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="bloque-observaciones">
+                    <label for="observaciones"><strong>Observaciones generales</strong></label>
+                    <textarea id="observaciones" name="observaciones"
+                        rows="3">{{ seguimiento.observaciones if seguimiento.observaciones else '' }}</textarea>
+                </div>
+
+                <div class="acciones">
+                    <button type="submit" class="btn btn-guardar">💾 Guardar seguimiento</button>
+                    <button type="button" class="btn btn-pdf" onclick="exportarExcelPDF()">📑 Exportar Excel como
+                        PDF</button>
+                    <button type="button" class="btn btn-excel" onclick="exportarExcel()">📊 Exportar Excel</button>
+                    <a href="{{ url_for('tutor.menu_tutor') }}" class="btn btn-volver">← Volver al menú</a>
+                </div>
+            </form>
+        </div>
+
+        <div id="tab-actividades" class="tab-panel">
+            <h3>Actividades de tutoría grupal</h3>
+            <div id="actividadesContainer" class="actividades-grid"></div>
+
+            <div class="form-actividad">
+                <h4>Registrar actividad</h4>
+                <form id="formActividad" enctype="multipart/form-data" method="post"
+                    action="{{ url_for('tutor.guardar_actividad') }}">
+                    <input type="hidden" name="grupo_id" value="{{ seguimiento.grupo_id }}">
+                    <input type="hidden" name="parcial" value="{{ seguimiento.parcial }}">
+                    <label>Sesión (1 a 4):</label>
+                    <input type="number" name="sesion_num" min="1" max="4" required>
+                    <label>Nombre de la actividad:</label>
+                    <input type="text" name="nombre_actividad" required>
+                    <label>Descripción:</label>
+                    <textarea name="descripcion" rows="3"></textarea>
+                    <label>Evidencia (imagen):</label>
+                    <input type="file" name="evidencia" accept="image/*">
+                    <button type="submit" class="btn btn-actividad">Guardar actividad</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function _submitExport(url, titulo, mensaje) {
+            Swal.fire({
+                icon: 'info',
+                title: titulo,
+                text: mensaje,
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            const origen = document.getElementById('seguimientoForm');
+            const datos = new FormData();
+
+            origen.querySelectorAll('input, select, textarea').forEach(el => {
+                if (!el.name) return;
+                if (el.type === 'checkbox') {
+                    if (el.checked) datos.append(el.name, el.value);
+                } else {
+                    datos.append(el.name, el.value);
+                }
+            });
+
+            fetch(url, { method: 'POST', body: datos })
+                .then(resp => {
+                    if (!resp.ok) throw new Error('Error del servidor: ' + resp.status);
+                    return resp.blob();
+                })
+                .then(blob => {
+                    const ext = url.includes('excel-pdf') ? 'pdf' : (url.includes('excel') ? 'xlsx' : 'pdf');
+                    const name = `Seguimiento_Academico.${ext}`;
+                    const burl = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = burl;
+                    a.download = name;
+                    document.body.appendChild(a);
+                    a.click();
+                    setTimeout(() => { URL.revokeObjectURL(burl); document.body.removeChild(a); }, 500);
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Listo!',
+                        text: `${name} descargado correctamente.`,
+                        timer: 2500,
+                        showConfirmButton: false
+                    });
+                })
+                .catch(err => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error al generar',
+                        text: err.message || 'Ocurrió un error inesperado.'
+                    });
+                });
+        }
+
+        function exportarPDF() {
+            const id = document.querySelector('input[name="seguimiento_id"]').value;
+            _submitExport(
+                "{{ url_for('tutor.exportar_seguimiento_pdf', seguimiento_id=0) }}".replace('0', id),
+                'Generando PDF...',
+                'Esto puede tardar unos segundos.'
+            );
+        }
+
+        function exportarExcel() {
+            const id = document.querySelector('input[name="seguimiento_id"]').value;
+            _submitExport(
+                "{{ url_for('tutor.exportar_seguimiento_excel', seguimiento_id=0) }}".replace('0', id),
+                'Generando Excel...',
+                'Preparando el reporte de seguimiento.'
+            );
+        }
+
+        function exportarExcelPDF() {
+            const id = document.querySelector('input[name="seguimiento_id"]').value;
+            _submitExport(
+                "{{ url_for('tutor.exportar_seguimiento_excel_pdf', seguimiento_id=0) }}".replace('0', id),
+                'Generando PDF desde Excel...',
+                'LibreOffice está convirtiendo el reporte, puede tardar hasta 30 segundos.'
+            );
+        }
+
+        async function cargarActividades() {
+            const grupoId = document.querySelector('input[name="grupo_id"]').value;
+            const parcial = document.querySelector('input[name="parcial"]').value;
+            const resp = await fetch(`/tutor/obtener_actividades/${grupoId}/${parcial}`);
+            const data = await resp.json();
+            if (data.status === "ok") {
+                const container = document.getElementById("actividadesContainer");
+                if (data.actividades.length === 0) {
+                    container.innerHTML = "<p>No hay actividades registradas para este parcial.</p>";
+                    return;
+                }
+                container.innerHTML = data.actividades.map(act => `
+                <div class="actividad-card">
+                    <h4>Sesión ${act.sesion_num}: ${act.nombre_actividad}</h4>
+                    <p><strong>Descripción:</strong> ${act.descripcion || "Sin descripción"}</p>
+                    ${act.evidencia_path ? `<img src="${act.evidencia_path}" alt="Evidencia">` : ""}
+                </div>
+            `).join("");
+            }
+        }
+
+        document.querySelectorAll(".tab-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("activo"));
+                document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("activo"));
+                btn.classList.add("activo");
+                const tab = btn.getAttribute("data-tab");
+                document.getElementById(`tab-${tab}`).classList.add("activo");
+                if (tab === "actividades") cargarActividades();
+            });
+        });
+    </script>
+</body>
+
+</html>

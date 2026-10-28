@@ -8,6 +8,8 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css">
     <link rel="stylesheet" href="{{url_for('static', filename='assets/CSS/alumno.css')}}">
+    <!-- Librería para leer QR -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 </head>
 
 <body>
@@ -26,7 +28,14 @@
                 </div>
 
                 <div class="qr-box">
-                    <img src="{{ url_for('generar_qr_alumno') }}" alt="QR del alumno">
+                    <img src="{{ url_for('alumno.generar_qr_alumno') }}" alt="QR del alumno">
+                </div>
+
+                <!-- Botón para escanear QR del tutor -->
+                <div class="btn-escaneo-container">
+                    <button id="btnEscanearTutor" class="btn-escaneo-tutor">
+                        📷 Escanear QR del Tutor
+                    </button>
                 </div>
             </div>
 
@@ -53,8 +62,8 @@
                             <p><strong>Periodo:</strong> {{ g.periodo }}</p>
                         </div>
 
-                        <form action="{{ url_for('inscribirme_grupo', grupo_id=g.id) }}" method="post">
-                            <button type="submit" class="btn-inscribirme" {% if g.inscrito == 1 %}disabled{% endif %}>
+                        <form action="{{ url_for('alumno.inscribirme_grupo', grupo_id=g.id) }}" method="post">
+                            <button type="submit" class="btn-inscribirme" {% if g.inscrito==1 %}disabled{% endif %}>
                                 {% if g.inscrito == 1 %}Ya inscrito{% else %}Inscribirme{% endif %}
                             </button>
                         </form>
@@ -79,7 +88,17 @@
                 </div>
 
                 <div class="menu-opciones">
-                    <a href="{{ url_for('descargar_qr_pdf') }}">Generar QR</a>
+                    <!-- Botón para abrir modal de modificar usuario -->
+                    <button id="btnAbrirModificar" class="btn-modificar-usuario">
+                        🔧 Modificar contraseña
+                    </button>
+
+                    <a href="{{ url_for('alumno.descargar_qr_pdf') }}">Generar QR</a>
+
+                    <!-- Botón de escáner en el menú lateral -->
+                    <button id="btnEscanearTutorSidebar" class="btn-escaneo-tutor">
+                        📷 Escanear QR del Tutor
+                    </button>
 
                     <div class="bloque-subida">
                         <input type="file" id="inputFoto" accept=".png,.jpg,.jpeg,.webp" hidden>
@@ -102,7 +121,7 @@
                         {% endif %}
                     </div>
 
-                    <a href="{{ url_for('cerrar_sesion') }}">Cerrar sesión</a>
+                    <a href="{{ url_for('auth.cerrar_sesion') }}">Cerrar sesión</a>
                 </div>
             </aside>
         </div>
@@ -110,6 +129,7 @@
 
     <div class="overlay-sidebar" id="overlaySidebar"></div>
 
+    <!-- Modal para recortar imagen de perfil -->
     <div class="modal-recorte" id="modalRecorte">
         <div class="modal-contenido">
             <button class="cerrar-modal" id="cerrarModalRecorte">×</button>
@@ -124,57 +144,96 @@
                 <button type="button" id="btnGuardarRecorte">Guardar imagen</button>
             </div>
         </div>
-        <div id="seccionModificarUsuario" class="seccion-panel">
-    <h2>Modificar usuario</h2>
+    </div>
 
-    <form action="{{ url_for('modificar_mi_usuario') }}" method="post" class="form-admin">
-        <div class="grid-form">
-            <div class="campo">
-                <label for="matricula_mod">Matrícula</label>
-                <input type="text" id="matricula_mod" value="{{ datos_usuario.matricula if datos_usuario else '' }}" readonly>
+    <!-- Modal para escanear QR del tutor -->
+    <div id="modalEscaner" class="modal-escaneo" style="display: none;">
+        <div class="modal-escaneo-contenido">
+            <button class="cerrar-escaneo" id="cerrarEscaner">×</button>
+            <h3>📷 Escanear QR del Tutor</h3>
+
+            <div class="video-container">
+                <video id="videoEscaner" autoplay playsinline></video>
+                <canvas id="canvasEscaner" style="display: none;"></canvas>
             </div>
 
-            <div class="campo">
-                <label for="nombre_mod">Nombre</label>
-                <input type="text" id="nombre_mod" value="{{ datos_usuario.nombre if datos_usuario else '' }}" readonly>
+            <div class="escaneo-info">
+                <p id="escaneoEstado">📱 Alinea el QR del tutor en la cámara</p>
             </div>
 
-            <div class="campo">
-                <label for="ap_paterno_mod">Apellido paterno</label>
-                <input type="text" id="ap_paterno_mod" value="{{ datos_usuario.ap_paterno if datos_usuario else '' }}" readonly>
+            <div class="escaneo-acciones">
+                <button id="btnSubirFotoQR" class="btn-subir-foto">📁 Subir foto del QR</button>
+                <button id="btnCancelarEscaner" class="btn-cancelar">Cancelar</button>
             </div>
 
-            <div class="campo">
-                <label for="ap_materno_mod">Apellido materno</label>
-                <input type="text" id="ap_materno_mod" value="{{ datos_usuario.ap_materno if datos_usuario else '' }}" readonly>
-            </div>
-
-            <div class="campo">
-                <label for="email_mod">Correo institucional</label>
-                <input type="email" id="email_mod" value="{{ datos_usuario.email if datos_usuario else '' }}" readonly>
-            </div>
-
-            <div class="campo">
-                <label for="tipo_mod">Tipo</label>
-                <input type="text" id="tipo_mod" value="{{ datos_usuario.tipo if datos_usuario else '' }}" readonly>
-            </div>
-
-            <div class="campo campo-completo">
-                <label for="nueva_password">Nueva contraseña</label>
-                <input type="password" id="nueva_password" name="nueva_password" placeholder="Ingresa la nueva contraseña" required>
-            </div>
-
-            <div class="campo campo-completo">
-                <label for="confirmar_password">Confirmar nueva contraseña</label>
-                <input type="password" id="confirmar_password" name="confirmar_password" placeholder="Confirma la nueva contraseña" required>
-            </div>
+            <input type="file" id="inputFotoQR" accept="image/*" hidden>
         </div>
+    </div>
 
-        <div class="acciones">
-            <button type="submit" class="btn btn-parcial">Cambiar contraseña</button>
+    <!-- Modal para modificar usuario -->
+    <div id="modalModificar" class="modal-modificar">
+        <div class="modal-modificar-contenido">
+            <button class="cerrar-modificar" id="cerrarModificar">×</button>
+
+            <h2>🔧 Modificar contraseña</h2>
+
+            <form id="formModificarUsuario" action="{{ url_for('auth.modificar_mi_usuario') }}" method="post">
+                <div class="grid-form">
+                    <div class="campo">
+                        <label for="matricula_mod">Matrícula</label>
+                        <input type="text" id="matricula_mod" name="matricula_mod"
+                            value="{{ datos_usuario.matricula if datos_usuario else '' }}" readonly>
+                    </div>
+
+                    <div class="campo">
+                        <label for="nombre_mod">Nombre</label>
+                        <input type="text" id="nombre_mod" name="nombre_mod"
+                            value="{{ datos_usuario.nombre if datos_usuario else '' }}" readonly>
+                    </div>
+
+                    <div class="campo">
+                        <label for="ap_paterno_mod">Apellido paterno</label>
+                        <input type="text" id="ap_paterno_mod" name="ap_paterno_mod"
+                            value="{{ datos_usuario.ap_paterno if datos_usuario else '' }}" readonly>
+                    </div>
+
+                    <div class="campo">
+                        <label for="ap_materno_mod">Apellido materno</label>
+                        <input type="text" id="ap_materno_mod" name="ap_materno_mod"
+                            value="{{ datos_usuario.ap_materno if datos_usuario else '' }}" readonly>
+                    </div>
+
+                    <div class="campo">
+                        <label for="email_mod">Correo institucional</label>
+                        <input type="email" id="email_mod" name="email_mod"
+                            value="{{ datos_usuario.email if datos_usuario else '' }}" readonly>
+                    </div>
+
+                    <div class="campo">
+                        <label for="tipo_mod">Tipo</label>
+                        <input type="text" id="tipo_mod" name="tipo_mod"
+                            value="{{ datos_usuario.tipo if datos_usuario else '' }}" readonly>
+                    </div>
+
+                    <div class="campo campo-completo">
+                        <label for="nueva_password">Nueva contraseña</label>
+                        <input type="password" id="nueva_password" name="nueva_password"
+                            placeholder="Ingresa la nueva contraseña" required autocomplete="new-password">
+                    </div>
+
+                    <div class="campo campo-completo">
+                        <label for="confirmar_password">Confirmar nueva contraseña</label>
+                        <input type="password" id="confirmar_password" name="confirmar_password"
+                            placeholder="Confirma la nueva contraseña" required autocomplete="new-password">
+                    </div>
+                </div>
+
+                <div class="modal-acciones">
+                    <button type="button" class="btn-cancelar-modal" id="cancelarModificar">Cancelar</button>
+                    <button type="submit" class="btn-guardar-modal">Cambiar contraseña</button>
+                </div>
+            </form>
         </div>
-    </form>
-</div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
