@@ -49,11 +49,14 @@ def menu_maestro():
         grupo_temp["alumnos"] = alumnos_grupo
         grupos_con_alumnos.append(grupo_temp)
 
+    alumnos_pendientes = tutor_manager.obtener_alumnos_pendientes(session["matricula"])
+
     return render_template(
         "Maestro/menu.html",
         nombre=session["nombre"],
         grupos=grupos_con_alumnos,
         datos_usuario=datos_usuario,
+        pendientes=alumnos_pendientes # Pasamos los pendientes a la vista
     )
 
 
@@ -283,3 +286,17 @@ def detener_sesion_qr(sesion_id):
     conexion.close()
 
     return jsonify({"status": "ok", "message": "Sesión finalizada correctamente"})
+
+@maestro_bp.route("/procesar_inscripcion", methods=["POST"])
+def procesar_inscripcion():
+    if not login_requerido("tutor", "maestro"):
+        return redirect(url_for("auth.index"))
+    
+    inscripcion_id = request.form.get("inscripcion_id")
+    accion = request.form.get("accion")
+    
+    if not inscripcion_id or not accion:
+        return redirect(url_for("maestro.menu_maestro", r="error"))
+
+    resultado = tutor_manager.procesar_inscripcion(inscripcion_id, accion)
+    return redirect(url_for("maestro.menu_maestro", r=resultado["status"]))

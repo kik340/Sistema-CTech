@@ -21,8 +21,8 @@ función global para reutilizar alertas desde otros módulos.
     const mensajes = {
         login: {
             error: {
-                "user_wrong": "El usuario no existe",
-                "password_wrong": "La contraseña está incorrecta",
+                "user_wrong": "Usuario o contraseña incorrectos",
+                "password_wrong": "Usuario o contraseña incorrectos",
                 "empty_login": "No puede haber datos vacíos",
                 "matricula_wrong": "La matrícula no tiene un formato válido",
                 "tipo_wrong": "No se pudo identificar el tipo de usuario"
@@ -40,7 +40,10 @@ función global para reutilizar alertas desde otros módulos.
                 "email_exists": "El correo ya está registrado",
                 "empty_request": "Todos los campos de la solicitud son obligatorios",
                 "error": "Ocurrió un error al procesar la solicitud",
-                "not_found": "No se encontró el registro solicitado"
+                "not_found": "No se encontró el registro solicitado",
+                "email_invalido_alumno": "Usa tu correo institucional @alumno.buap.mx o @alm.buap.mx",
+                "email_invalido_personal": "Los maestros y laboratoristas deben usar @correo.buap.mx",
+                "password_no_match": "Las contraseñas no coinciden",
             },
             success: {
                 "request_ok": "Solicitud enviada correctamente",
@@ -63,6 +66,20 @@ función global para reutilizar alertas desde otros módulos.
                 "rejected": "Solicitud rechazada correctamente",
                 "group_assigned": "Te asignaste el grupo correctamente",
                 "student_group_ok": "Alumno agregado al grupo correctamente"
+            }
+        },
+
+        // NUEVO BLOQUE: Respuestas para la inscripción del alumno
+        alumno: {
+            error: {
+                "wrong_career": "No puedes inscribirte a un grupo que no pertenece a tu carrera",
+                "exists": "Actualmente ya formas parte de este grupo"
+            },
+            info: {
+                "pending": "Ya tienes una solicitud pendiente para este grupo. Espera a que el maestro la revise."
+            },
+            success: {
+                "solicitud_enviada": "Solicitud enviada. En espera de aprobación del maestro."
             }
         },
 
@@ -122,88 +139,34 @@ función global para reutilizar alertas desde otros módulos.
         let titulo = "Error"
 
         // Login
-        if (mensajes.login.error[codigo]) {
-            mensaje = mensajes.login.error[codigo]
-            tipo = "error"
-            titulo = "Error"
-        }
-
-        if (mensajes.login.success[codigo]) {
-            mensaje = mensajes.login.success[codigo]
-            tipo = "success"
-            titulo = "Correcto"
-        }
+        if (mensajes.login.error[codigo]) { mensaje = mensajes.login.error[codigo]; tipo = "error"; titulo = "Error"; }
+        if (mensajes.login.success[codigo]) { mensaje = mensajes.login.success[codigo]; tipo = "success"; titulo = "Correcto"; }
 
         // Registro
-        if (mensajes.registro.error[codigo]) {
-            mensaje = mensajes.registro.error[codigo]
-            tipo = "error"
-            titulo = "Error"
-        }
-
-        if (mensajes.registro.success[codigo]) {
-            mensaje = mensajes.registro.success[codigo]
-            tipo = "success"
-            titulo = "Correcto"
-        }
+        if (mensajes.registro.error[codigo]) { mensaje = mensajes.registro.error[codigo]; tipo = "error"; titulo = "Error"; }
+        if (mensajes.registro.success[codigo]) { mensaje = mensajes.registro.success[codigo]; tipo = "success"; titulo = "Correcto"; }
 
         // Tutor
-        if (mensajes.tutor.error[codigo]) {
-            mensaje = mensajes.tutor.error[codigo]
-            tipo = "error"
-            titulo = "Error"
-        }
+        if (mensajes.tutor.error[codigo]) { mensaje = mensajes.tutor.error[codigo]; tipo = "error"; titulo = "Error"; }
+        if (mensajes.tutor.success[codigo]) { mensaje = mensajes.tutor.success[codigo]; tipo = "success"; titulo = "Correcto"; }
 
-        if (mensajes.tutor.success[codigo]) {
-            mensaje = mensajes.tutor.success[codigo]
-            tipo = "success"
-            titulo = "Correcto"
-        }
+        // Alumno (NUEVAS LECTURAS)
+        if (mensajes.alumno.error && mensajes.alumno.error[codigo]) { mensaje = mensajes.alumno.error[codigo]; tipo = "warning"; titulo = "Atención"; }
+        if (mensajes.alumno.info && mensajes.alumno.info[codigo]) { mensaje = mensajes.alumno.info[codigo]; tipo = "info"; titulo = "Solicitud en proceso"; }
+        if (mensajes.alumno.success && mensajes.alumno.success[codigo]) { mensaje = mensajes.alumno.success[codigo]; tipo = "success"; titulo = "Solicitud enviada"; }
 
         // QR
-        if (mensajes.qr.error[codigo]) {
-            mensaje = mensajes.qr.error[codigo]
-            tipo = "error"
-            titulo = "Error"
-        }
-
-        if (mensajes.qr.success[codigo]) {
-            mensaje = mensajes.qr.success[codigo]
-            tipo = "success"
-            titulo = "Correcto"
-        }
+        if (mensajes.qr.error[codigo]) { mensaje = mensajes.qr.error[codigo]; tipo = "error"; titulo = "Error"; }
+        if (mensajes.qr.success[codigo]) { mensaje = mensajes.qr.success[codigo]; tipo = "success"; titulo = "Correcto"; }
 
         // Escaneo
-        if (mensajes.escaneo.error[codigo]) {
-            mensaje = mensajes.escaneo.error[codigo]
-            tipo = "error"
-            titulo = "Error"
-        }
-
-        if (mensajes.escaneo.info[codigo]) {
-            mensaje = mensajes.escaneo.info[codigo]
-            tipo = "info"
-            titulo = "Información"
-        }
+        if (mensajes.escaneo.error[codigo]) { mensaje = mensajes.escaneo.error[codigo]; tipo = "error"; titulo = "Error"; }
+        if (mensajes.escaneo.info[codigo]) { mensaje = mensajes.escaneo.info[codigo]; tipo = "info"; titulo = "Información"; }
 
         // Laboratorista
-        if (mensajes.laboratorista.error[codigo]) {
-            mensaje = mensajes.laboratorista.error[codigo]
-            tipo = "error"
-            titulo = "Error"
-        }
-
-        if (mensajes.laboratorista.success[codigo]) {
-            mensaje = mensajes.laboratorista.success[codigo]
-            tipo = "success"
-            titulo = "Correcto"
-        }
-
-        if (mensajes.laboratorista.warning[codigo]) {
-            mensaje = mensajes.laboratorista.warning[codigo]
-            tipo = "warning"
-            titulo = "Aviso"
-        }
+        if (mensajes.laboratorista.error[codigo]) { mensaje = mensajes.laboratorista.error[codigo]; tipo = "error"; titulo = "Error"; }
+        if (mensajes.laboratorista.success[codigo]) { mensaje = mensajes.laboratorista.success[codigo]; tipo = "success"; titulo = "Correcto"; }
+        if (mensajes.laboratorista.warning[codigo]) { mensaje = mensajes.laboratorista.warning[codigo]; tipo = "warning"; titulo = "Aviso"; }
 
         if (codigo === "device_expired" && dispositivo) {
             mensaje = `Se acabó el tiempo del dispositivo: ${dispositivo}`

@@ -2,10 +2,6 @@
 
 Aquí se concentra la lógica de acceso, solicitudes, alumnos, externos, personal
 y operaciones comunes relacionadas con cuentas.
-
-
-
-
 """
 
 from db.Conection import obtener_cursor
@@ -93,6 +89,35 @@ class User:
         conexion.close()
         return carrera
 
+    def generar_siglas_carrera(self, nombre_carrera):
+        nombre_carrera = (nombre_carrera or "").strip()
+
+        if nombre_carrera == "":
+            return "XX"
+
+        palabras_originales = [p for p in nombre_carrera.split() if p]
+
+        iniciales_mayusculas = ""
+        for palabra in palabras_originales:
+            primera = palabra[:1]
+            if primera.isalpha() and primera.isupper():
+                iniciales_mayusculas += primera
+
+        if len(iniciales_mayusculas) >= 2:
+            return iniciales_mayusculas[:2]
+
+        texto = self.limpiar_texto(nombre_carrera)
+        palabras = [p for p in texto.split() if p]
+
+        if len(palabras) >= 2:
+            return (palabras[0][0] + palabras[1][0]).upper()
+
+        limpio = texto.replace(" ", "")
+        if len(limpio) >= 2:
+            return limpio[:2].upper()
+
+        return "XX"
+
     def generar_base_matricula_alumno(self, carrera_id, anio_ingreso):
         carrera = self.obtener_datos_carrera(carrera_id)
 
@@ -108,7 +133,7 @@ class User:
     def generar_matricula_personal(self, tipo):
         tipo = str(tipo).strip().lower()
 
-        if tipo == "tutor":
+        if tipo == "tutor" or tipo == "maestro":
             prefijo = "TT"
         elif tipo == "laboratorista":
             prefijo = "LB"
@@ -154,67 +179,6 @@ class User:
 
         return None
 
-    def generar_siglas_carrera(self, nombre_carrera):
-        nombre_carrera = (nombre_carrera or "").strip()
-
-        if nombre_carrera == "":
-            return "XX"
-
-        palabras_originales = [p for p in nombre_carrera.split() if p]
-
-        iniciales_mayusculas = ""
-        for palabra in palabras_originales:
-            primera = palabra[:1]
-            if primera.isalpha() and primera.isupper():
-                iniciales_mayusculas += primera
-
-        if len(iniciales_mayusculas) >= 2:
-            return iniciales_mayusculas[:2]
-
-        texto = self.limpiar_texto(nombre_carrera)
-        palabras = [p for p in texto.split() if p]
-
-        if len(palabras) >= 2:
-            return (palabras[0][0] + palabras[1][0]).upper()
-
-        limpio = texto.replace(" ", "")
-        if len(limpio) >= 2:
-            return limpio[:2].upper()
-
-        return "XX"
-
-    def generar_base_matricula_alumno(self, carrera_id, anio_ingreso):
-        carrera = self.obtener_datos_carrera(carrera_id)
-
-        if not carrera:
-            return None
-
-        siglas = self.generar_siglas_carrera(carrera["nombre"])
-        anio_2 = str(anio_ingreso)[-2:]
-        carrera_2 = str(carrera["id"]).zfill(2)
-
-        return f"{siglas}{anio_2}{carrera_2}"
-
-    def generar_matricula_alumno(self, carrera_id, anio_ingreso):
-        base = self.generar_base_matricula_alumno(carrera_id, anio_ingreso)
-
-        if not base:
-            return None
-
-        intentos = 0
-        max_intentos = 300
-
-        while intentos < max_intentos:
-            sufijo = str(random.randint(0, 99)).zfill(2)
-            matricula = f"{base}{sufijo}"
-
-            if not self.existe_matricula_global(matricula):
-                return matricula
-
-            intentos += 1
-
-        return None
-
     def generar_email_institucional(self, ap_paterno, ap_materno, matricula):
         return f"{matricula}@itsatlixco.edu.mx"
 
@@ -232,7 +196,7 @@ class User:
                 return {"status": "request_ok"}
             return resultado
 
-        if tipo_solicitud == "tutor":
+        if tipo_solicitud in ["tutor", "maestro"]:
             resultado = self.registrar_personal_directo(
                 {
                     "nombre": datos["nombre"],
@@ -347,7 +311,6 @@ class User:
         return total
 
     def aprobar_solicitud(self, solicitud_id):
-        """Aprueba una solicitud de registro pendiente desde el módulo de tutor."""
         conexion, cursor = obtener_cursor()
 
         try:
@@ -515,7 +478,6 @@ class User:
             return {"status": "error"}
 
     def rechazar_solicitud(self, solicitud_id):
-        """Rechaza una solicitud de registro pendiente desde el módulo de tutor."""
         conexion, cursor = obtener_cursor()
 
         try:
@@ -695,7 +657,7 @@ class User:
             matricula = str(matricula).strip()
             tipo = str(tipo).strip().lower()
 
-            if tipo in ["tutor", "laboratorista"]:
+            if tipo in ["tutor", "maestro", "laboratorista"]:
                 cursor.execute(
                     """
                     SELECT
@@ -921,7 +883,7 @@ class User:
             password_hash = generate_password_hash(datos["password"])
             tipo = str(datos["tipo"]).strip().lower()
 
-            if tipo not in ["tutor", "laboratorista"]:
+            if tipo not in ["tutor", "maestro", "laboratorista"]:
                 conexion.close()
                 return {"status": "tipo_wrong"}
 
@@ -1073,60 +1035,57 @@ class User:
             return {"status": "error"}
 
     def obtener_grupos_disponibles_para_alumno(self, matricula):
+        """Devuelve las materias y grupos con un CASE para identificar el estatus de inscripción."""
         conexion, cursor = obtener_cursor()
 
-        cursor.execute(
-            """
-            SELECT carrera_id
-            FROM alumnos
-            WHERE matricula = %s AND activo = 1
-            LIMIT 1
-        """,
-            (matricula,),
-        )
-        alumno = cursor.fetchone()
+        try:
+            cursor.execute(
+                """
+                SELECT carrera_id 
+                FROM alumnos 
+                WHERE matricula = %s AND activo = 1
+                LIMIT 1
+            """,
+                (matricula,),
+            )
+            alumno = cursor.fetchone()
 
-        if not alumno:
-            conexion.close()
+            if not alumno:
+                return []
+
+            carrera_id = alumno["carrera_id"]
+
+            cursor.execute(
+                """
+                SELECT 
+                    g.id, g.grupo, g.turno, g.periodo, g.semestre, g.tutor_matricula,
+                    m.nombre as materia, c.nombre as carrera,
+                    CASE 
+                        WHEN ag.id IS NULL THEN 0
+                        WHEN ag.activo = 1 THEN 1
+                        WHEN ag.activo = 0 THEN 2
+                    END as inscrito
+                FROM grupos g
+                INNER JOIN materias m ON g.materia_id = m.id
+                INNER JOIN carreras c ON g.carrera_id = c.id
+                LEFT JOIN alumnos_grupo ag ON g.id = ag.grupo_id AND ag.alumno_matricula = %s
+                WHERE g.carrera_id = %s AND g.activo = 1 AND g.tutor_matricula IS NOT NULL
+                ORDER BY g.semestre ASC, m.nombre ASC
+            """,
+                (matricula, carrera_id),
+            )
+            grupos = cursor.fetchall()
+            return grupos
+
+        except Exception as e:
+            print("Error obtener_grupos_disponibles_para_alumno:", e)
             return []
-
-        carrera_id = alumno["carrera_id"]
-
-        cursor.execute(
-            """
-            SELECT
-                g.id,
-                m.nombre AS materia,
-                m.id AS materia_id,
-                g.semestre,
-                g.grupo,
-                g.turno,
-                g.periodo,
-                c.nombre AS carrera,
-                CASE
-                    WHEN ag.id IS NULL THEN 0
-                    ELSE 1
-                END AS inscrito
-            FROM grupos g
-            INNER JOIN materias m ON m.id = g.materia_id
-            INNER JOIN carreras c ON c.id = g.carrera_id
-            LEFT JOIN alumnos_grupo ag
-                ON ag.grupo_id = g.id
-               AND ag.alumno_matricula = %s
-               AND ag.activo = 1
-            WHERE g.carrera_id = %s
-              AND g.activo = 1
-              AND m.activa = 1
-            ORDER BY CAST(g.semestre AS UNSIGNED), m.nombre, g.grupo
-        """,
-            (matricula, carrera_id),
-        )
-
-        grupos = cursor.fetchall()
-        conexion.close()
-        return grupos
+        finally:
+            cursor.close()
+            conexion.close()
 
     def inscribir_alumno_a_grupo(self, matricula, grupo_id):
+        """Inserta la solicitud de inscripción al grupo con el activo=0 (pendiente de aprobación)."""
         conexion, cursor = obtener_cursor()
 
         try:
@@ -1180,26 +1139,20 @@ class User:
                 return {"status": "exists"}
 
             if existe and int(existe["activo"]) == 0:
-                cursor.execute(
-                    """
-                    UPDATE alumnos_grupo
-                    SET activo = 1
-                    WHERE id = %s
-                """,
-                    (existe["id"],),
-                )
-            else:
-                cursor.execute(
-                    """
-                    INSERT INTO alumnos_grupo (alumno_matricula, grupo_id, activo)
-                    VALUES (%s, %s, 1)
-                """,
-                    (matricula, grupo_id),
-                )
+                conexion.close()
+                return {"status": "pending"}
+
+            cursor.execute(
+                """
+                INSERT INTO alumnos_grupo (alumno_matricula, grupo_id, activo)
+                VALUES (%s, %s, 0)
+            """,
+                (matricula, grupo_id),
+            )
 
             conexion.commit()
             conexion.close()
-            return {"status": "ok"}
+            return {"status": "solicitud_enviada"}
 
         except Exception as e:
             conexion.rollback()
@@ -1215,7 +1168,7 @@ class User:
             tipo = str(tipo).strip().lower()
             password_hash = generate_password_hash(nueva_password)
 
-            if tipo in ["tutor", "laboratorista"]:
+            if tipo in ["tutor", "maestro", "laboratorista"]:
                 cursor.execute(
                     """
                     UPDATE personal
@@ -1312,514 +1265,38 @@ class User:
             conexion.close()
             print("Error cambiar_password_usuario:", e)
             return {"status": "error"}
-"""Gestor principal de usuarios del sistema.
 
-Concentra la lógica de autenticación, generación de matrículas estilo BUAP,
-solicitudes, personal y operaciones de cuenta.
-"""
-
-import random
-import re
-from datetime import datetime
-from werkzeug.security import generate_password_hash, check_password_hash
-
-from db.Conection import obtener_cursor
-from Class.EmailManager import EmailSender
-
-
-class User:
-    """Concentra la lógica principal de autenticación, altas y consultas de usuarios."""
-
-    def existe_matricula_global(self, matricula):
-        """Verifica en una sola consulta si la matrícula existe en alumnos, externos o personal."""
-        conexion, cursor = obtener_cursor()
-        cursor.execute(
-            """
-            SELECT 1 FROM alumnos WHERE matricula = %s
-            UNION
-            SELECT 1 FROM externos WHERE matricula = %s
-            UNION
-            SELECT 1 FROM personal WHERE matricula = %s
-            LIMIT 1
-            """,
-            (matricula, matricula, matricula),
-        )
-        existe = cursor.fetchone() is not None
-        cursor.close()
-        conexion.close()
-        return existe
-
-    def existe_email_global(self, email):
-        """Verifica en una sola consulta si el correo existe en la base de datos."""
-        conexion, cursor = obtener_cursor()
-        cursor.execute(
-            """
-            SELECT 1 FROM alumnos WHERE email = %s
-            UNION
-            SELECT 1 FROM externos WHERE email = %s
-            UNION
-            SELECT 1 FROM personal WHERE email = %s
-            LIMIT 1
-            """,
-            (email, email, email),
-        )
-        existe = cursor.fetchone() is not None
-        cursor.close()
-        conexion.close()
-        return existe
-
-    def limpiar_texto(self, texto):
-        texto = str(texto or "").lower().strip()
-        reemplazos = {"á": "a", "é": "e", "í": "i", "ó": "o", "ú": "u", "ñ": "n"}
-        for a, b in reemplazos.items():
-            texto = texto.replace(a, b)
-        return re.sub(r"[^a-z0-9 ]", "", texto)
-
-    def obtener_datos_carrera(self, carrera_id):
-        conexion, cursor = obtener_cursor()
-        cursor.execute(
-            "SELECT id, nombre FROM carreras WHERE id = %s LIMIT 1", (carrera_id,)
-        )
-        carrera = cursor.fetchone()
-        cursor.close()
-        conexion.close()
-        return carrera
-
-    def generar_matricula_alumno(self, carrera_id, anio_ingreso):
-        """Genera una matrícula de 9 dígitos estilo BUAP: [AAAA][XXXXX]
-        Ejemplo: 202438968
-        """
-        try:
-            anio_str = str(int(anio_ingreso))
-            if len(anio_str) != 4:
-                anio_str = str(datetime.now().year)
-        except (ValueError, TypeError):
-            anio_str = str(datetime.now().year)
-
-        for _ in range(500):
-            consecutivo = str(random.randint(10000, 99999))
-            matricula = f"{anio_str}{consecutivo}"
-            if not self.existe_matricula_global(matricula):
-                return matricula
-
-        return None
-
-    def generar_matricula_personal(self, tipo):
-        tipo = str(tipo).strip().lower()
-        if tipo == "tutor" or tipo == "maestro":
-            prefijo = "TT"
-        elif tipo == "laboratorista":
-            prefijo = "LB"
-        else:
-            prefijo = "PS"
-
-        anio_2 = datetime.now().strftime("%y")
-
-        for _ in range(500):
-            sufijo = str(random.randint(0, 9999)).zfill(4)
-            matricula = f"{prefijo}{anio_2}{sufijo}"
-            if not self.existe_matricula_global(matricula):
-                return matricula
-
-        return None
-
-    def generar_email_institucional(self, ap_paterno, ap_materno, matricula):
-        return f"{matricula}@itsatlixco.edu.mx"
-
-    def generar_email_personal(self, matricula):
-        return f"{matricula}@itsatlixco.edu.mx"
-
-    def generar_email_externo(self, matricula):
-        return f"EE{matricula}@itsatlixco.edu.mx"
-
-    def crear_solicitud(self, datos):
-        tipo_solicitud = str(datos.get("tipo_solicitud", "")).strip().lower()
-
-        if tipo_solicitud == "alumno":
-            resultado = self.registrar_alumno_directo(
-                datos, guardar_en_solicitudes=True
-            )
-            if resultado["status"] == "ok":
-                return {"status": "request_ok"}
-            return resultado
-
-        if tipo_solicitud in ["tutor", "maestro"]:
-            resultado = self.registrar_personal_directo(
-                {
-                    "nombre": datos["nombre"],
-                    "ap_paterno": datos["ap_paterno"],
-                    "ap_materno": datos["ap_materno"],
-                    "correo_temporal": datos["correo_temporal"],
-                    "password": datos["password"],
-                    "tipo": "tutor",
-                }
-            )
-            if resultado["status"] == "ok":
-                return {"status": "request_ok"}
-            return resultado
-
+    def registro_directo_general(self, datos):
         conexion, cursor = obtener_cursor()
         try:
-            nombre_completo = (
-                f'{datos["nombre"]} {datos["ap_paterno"]} {datos["ap_materno"]}'
-            )
-            password_hash = generate_password_hash(datos["password"])
+            tipo = datos["tipo_usuario"]
+            
+            cursor.execute("SELECT id FROM alumnos WHERE matricula = %s OR email = %s", (datos["matricula"], datos["email"]))
+            if cursor.fetchone(): return {"status": "matricula_exists"}
+            
+            cursor.execute("SELECT id FROM personal WHERE matricula = %s OR email = %s", (datos["matricula"], datos["email"]))
+            if cursor.fetchone(): return {"status": "matricula_exists"}
 
-            cursor.execute(
-                """
-                INSERT INTO solicitudes_registro
-                (nombre, ap_paterno, ap_materno, nombre_completo, correo_temporal, 
-                 password, tipo_solicitud, carrera_id, anio_ingreso, motivo, estado)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'pendiente')
-                """,
-                (
-                    datos["nombre"],
-                    datos["ap_paterno"],
-                    datos["ap_materno"],
-                    nombre_completo,
-                    datos["correo_temporal"],
-                    password_hash,
-                    datos["tipo_solicitud"],
-                    datos.get("carrera_id"),
-                    datos.get("anio_ingreso"),
-                    datos.get("motivo"),
-                ),
-            )
-
-            conexion.commit()
-            cursor.close()
-            conexion.close()
-            return {"status": "request_ok"}
-
-        except Exception as e:
-            conexion.rollback()
-            cursor.close()
-            conexion.close()
-            print("Error crear_solicitud:", e)
-            return {"status": "error"}
-
-    def login_por_matricula(self, matricula, password):
-        conexion, cursor = obtener_cursor()
-        try:
-            matricula = str(matricula).strip()
-            if not matricula:
-                cursor.close()
-                conexion.close()
-                return {"status": "empty_login"}
-
-            # Buscar en Alumnos
-            cursor.execute(
-                """
-                SELECT matricula, nombre_completo, email, password, 'alumno' AS tipo, carrera_id, activo
-                FROM alumnos WHERE matricula = %s LIMIT 1
-                """,
-                (matricula,),
-            )
-            usuario = cursor.fetchone()
-
-            # Buscar en Externos
-            if not usuario:
-                cursor.execute(
-                    """
-                    SELECT matricula, nombre_completo, email, password, 'externo' AS tipo, NULL AS carrera_id, activo
-                    FROM externos WHERE matricula = %s LIMIT 1
-                    """,
-                    (matricula,),
-                )
-                usuario = cursor.fetchone()
-
-            # Buscar en Personal
-            if not usuario:
-                cursor.execute(
-                    """
-                    SELECT matricula, nombre_completo, email, password, tipo, carrera_id, activo
-                    FROM personal WHERE matricula = %s LIMIT 1
-                    """,
-                    (matricula,),
-                )
-                usuario = cursor.fetchone()
-
-            cursor.close()
-            conexion.close()
-
-            if not usuario:
-                return {"status": "user_wrong"}
-
-            if int(usuario["activo"]) != 1:
-                return {"status": "inactive_user"}
-
-            if not check_password_hash(usuario["password"], password):
-                return {"status": "password_wrong"}
-
-            return {
-                "status": "ok",
-                "matricula": usuario["matricula"],
-                "nombre": usuario["nombre_completo"],
-                "email": usuario["email"],
-                "tipo": usuario["tipo"],
-                "carrera": usuario.get("carrera_id"),
-            }
-
-        except Exception as e:
-            if "cursor" in locals():
-                cursor.close()
-            conexion.close()
-            print("Error login_por_matricula:", e)
-            return {"status": "error"}
-
-    def registrar_alumno_directo(self, datos, guardar_en_solicitudes=True):
-        conexion, cursor = obtener_cursor()
-        try:
-            nombre = str(datos["nombre"]).strip()
-            ap_paterno = str(datos["ap_paterno"]).strip()
-            ap_materno = str(datos["ap_materno"]).strip()
-            nombre_completo = f"{nombre} {ap_paterno} {ap_materno}"
-            correo_temporal = str(datos["correo_temporal"]).strip()
-            carrera_id = datos.get("carrera_id")
-            anio_ingreso = datos.get("anio_ingreso")
-
-            if not carrera_id or not anio_ingreso:
-                cursor.close()
-                conexion.close()
-                return {"status": "empty_request"}
-
-            password_hash = datos.get("password_hash") or generate_password_hash(
-                datos["password"]
-            )
-
-            # Matrícula numérica estilo BUAP de 9 dígitos (ej. 2024XXXXX)
-            matricula = self.generar_matricula_alumno(carrera_id, anio_ingreso)
-            if not matricula:
-                cursor.close()
-                conexion.close()
-                return {"status": "error_matricula"}
-
-            email_institucional = self.generar_email_institucional(
-                ap_paterno, ap_materno, matricula
-            )
-
-            cursor.execute(
-                """
-                INSERT INTO alumnos
-                (matricula, nombre, ap_paterno, ap_materno, nombre_completo, email, password, carrera_id, anio_ingreso)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """,
-                (
-                    matricula,
-                    nombre,
-                    ap_paterno,
-                    ap_materno,
-                    nombre_completo,
-                    email_institucional,
-                    password_hash,
-                    carrera_id,
-                    anio_ingreso,
-                ),
-            )
-
-            if guardar_en_solicitudes:
-                cursor.execute(
-                    """
-                    INSERT INTO solicitudes_registro
-                    (nombre, ap_paterno, ap_materno, nombre_completo, correo_temporal, password, tipo_solicitud, carrera_id, anio_ingreso, estado)
-                    VALUES (%s, %s, %s, %s, %s, %s, 'alumno', %s, %s, 'aprobada')
-                    """,
-                    (
-                        nombre,
-                        ap_paterno,
-                        ap_materno,
-                        nombre_completo,
-                        correo_temporal,
-                        password_hash,
-                        carrera_id,
-                        anio_ingreso,
-                    ),
-                )
-
-            conexion.commit()
-            cursor.close()
-            conexion.close()
-
-            try:
-                EmailSender().enviar_datos_acceso(
-                    destino=correo_temporal,
-                    nombre=nombre_completo,
-                    matricula=matricula,
-                    email_institucional=email_institucional,
-                )
-            except Exception as e:
-                print("Error enviando correo alumno:", e)
-
-            return {
-                "status": "ok",
-                "matricula": matricula,
-                "email": email_institucional,
-                "correo_temporal": correo_temporal,
-            }
-
-        except Exception as e:
-            conexion.rollback()
-            cursor.close()
-            conexion.close()
-            print("Error registrar_alumno_directo:", e)
-            return {"status": "error"}
-
-    def cambiar_password_usuario(self, matricula, tipo, nueva_password):
-        conexion, cursor = obtener_cursor()
-        try:
-            matricula = str(matricula).strip()
-            tipo = str(tipo).strip().lower()
-            password_hash = generate_password_hash(nueva_password)
-
-            tabla = (
-                "personal"
-                if tipo in ["tutor", "maestro", "laboratorista"]
-                else ("alumnos" if tipo == "alumno" else "externos")
-            )
-
-            cursor.execute(
-                f"UPDATE {tabla} SET password = %s WHERE matricula = %s LIMIT 1",
-                (password_hash, matricula),
-            )
-            conexion.commit()
-            cursor.close()
-            conexion.close()
-
-            return {"status": "ok"}
-
-        except Exception as e:
-            conexion.rollback()
-            cursor.close()
-            conexion.close()
-            print("Error cambiar_password_usuario:", e)
-            return {"status": "error"}
-
-    def obtener_mis_datos(self, matricula, tipo):
-        conexion, cursor = obtener_cursor()
-        try:
-            matricula = str(matricula).strip()
-            tipo = str(tipo).strip().lower()
-
-            if tipo in ["tutor", "maestro", "laboratorista"]:
-                cursor.execute(
-                    "SELECT matricula, nombre, ap_paterno, ap_materno, email, correo_temporal, tipo, activo FROM personal WHERE matricula = %s LIMIT 1",
-                    (matricula,),
-                )
-            elif tipo == "alumno":
-                cursor.execute(
-                    "SELECT matricula, nombre, ap_paterno, ap_materno, email, NULL AS correo_temporal, 'alumno' AS tipo, activo FROM alumnos WHERE matricula = %s LIMIT 1",
-                    (matricula,),
-                )
-            elif tipo == "externo":
-                cursor.execute(
-                    "SELECT matricula, nombre, ap_paterno, ap_materno, email, email AS correo_temporal, 'externo' AS tipo, activo FROM externos WHERE matricula = %s LIMIT 1",
-                    (matricula,),
-                )
+            if tipo == "alumno":
+                cursor.execute("""
+                    INSERT INTO alumnos 
+                    (matricula, nombre, ap_paterno, ap_materno, nombre_completo, email, password, genero, carrera_id, anio_ingreso, activo)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, 'NA', %s, YEAR(CURRENT_DATE), 1)
+                """, (datos["matricula"], datos["nombre"], datos["ap_paterno"], datos["ap_materno"], datos["nombre_completo"], datos["email"], datos["password"], datos["carrera_id"]))
             else:
-                cursor.close()
-                conexion.close()
-                return None
-
-            datos = cursor.fetchone()
-            cursor.close()
-            conexion.close()
-            return datos
-
-        except Exception as e:
-            cursor.close()
-            conexion.close()
-            print("Error obtener_mis_datos:", e)
-            return None
-
-    def obtener_grupos_disponibles_para_alumno(self, matricula):
-        conexion, cursor = obtener_cursor()
-        cursor.execute(
-            "SELECT carrera_id FROM alumnos WHERE matricula = %s AND activo = 1 LIMIT 1",
-            (matricula,),
-        )
-        alumno = cursor.fetchone()
-
-        if not alumno:
-            cursor.close()
-            conexion.close()
-            return []
-
-        cursor.execute(
-            """
-            SELECT g.id, m.nombre AS materia, m.id AS materia_id, g.semestre, g.grupo, 
-                   g.turno, g.periodo, c.nombre AS carrera,
-                   CASE WHEN ag.id IS NULL THEN 0 ELSE 1 END AS inscrito
-            FROM grupos g
-            INNER JOIN materias m ON m.id = g.materia_id
-            INNER JOIN carreras c ON c.id = g.carrera_id
-            LEFT JOIN alumnos_grupo ag ON ag.grupo_id = g.id AND ag.alumno_matricula = %s AND ag.activo = 1
-            WHERE g.carrera_id = %s AND g.activo = 1 AND m.activa = 1
-            ORDER BY CAST(g.semestre AS UNSIGNED), m.nombre, g.grupo
-            """,
-            (matricula, alumno["carrera_id"]),
-        )
-        grupos = cursor.fetchall()
-        cursor.close()
-        conexion.close()
-        return grupos
-
-    def inscribir_alumno_a_grupo(self, matricula, grupo_id):
-        conexion, cursor = obtener_cursor()
-        try:
-            cursor.execute(
-                "SELECT matricula, carrera_id FROM alumnos WHERE matricula = %s AND activo = 1 LIMIT 1",
-                (matricula,),
-            )
-            alumno = cursor.fetchone()
-            if not alumno:
-                cursor.close()
-                conexion.close()
-                return {"status": "student_not_found"}
-
-            cursor.execute(
-                "SELECT id, carrera_id FROM grupos WHERE id = %s AND activo = 1 LIMIT 1",
-                (grupo_id,),
-            )
-            grupo = cursor.fetchone()
-            if not grupo:
-                cursor.close()
-                conexion.close()
-                return {"status": "group_not_found"}
-
-            if int(alumno["carrera_id"]) != int(grupo["carrera_id"]):
-                cursor.close()
-                conexion.close()
-                return {"status": "wrong_career"}
-
-            cursor.execute(
-                "SELECT id, activo FROM alumnos_grupo WHERE alumno_matricula = %s AND grupo_id = %s LIMIT 1",
-                (matricula, grupo_id),
-            )
-            existe = cursor.fetchone()
-
-            if existe and int(existe["activo"]) == 1:
-                cursor.close()
-                conexion.close()
-                return {"status": "exists"}
-
-            if existe and int(existe["activo"]) == 0:
-                cursor.execute(
-                    "UPDATE alumnos_grupo SET activo = 1 WHERE id = %s", (existe["id"],)
-                )
-            else:
-                cursor.execute(
-                    "INSERT INTO alumnos_grupo (alumno_matricula, grupo_id, activo) VALUES (%s, %s, 1)",
-                    (matricula, grupo_id),
-                )
-
+                cursor.execute("""
+                    INSERT INTO personal 
+                    (matricula, nombre, ap_paterno, ap_materno, nombre_completo, email, password, tipo, carrera_id, activo)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 1)
+                """, (datos["matricula"], datos["nombre"], datos["ap_paterno"], datos["ap_materno"], datos["nombre_completo"], datos["email"], datos["password"], tipo, datos["carrera_id"]))
+            
             conexion.commit()
-            cursor.close()
-            conexion.close()
             return {"status": "ok"}
-
+            
         except Exception as e:
             conexion.rollback()
+            print("Error en registro:", e)
+            return {"status": "error"}
+        finally:
             cursor.close()
             conexion.close()
-            print("Error inscribir_alumno_a_grupo:", e)
-            return {"status": "error"}

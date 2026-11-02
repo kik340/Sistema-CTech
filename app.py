@@ -5,6 +5,7 @@ from routes.auth import auth_bp
 from routes.alumno import alumno_bp
 from routes.laboratorista import laboratorista_bp
 from routes.maestro import maestro_bp
+from routes.admin import admin_bp
 
 
 app = Flask(__name__)
@@ -23,6 +24,7 @@ app.register_blueprint(auth_bp)
 app.register_blueprint(alumno_bp, url_prefix="/alumno")
 app.register_blueprint(laboratorista_bp, url_prefix="/laboratorista")
 app.register_blueprint(maestro_bp, url_prefix="/maestro")
+app.register_blueprint(admin_bp, url_prefix="/admin")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=3500, debug=True)

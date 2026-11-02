@@ -272,6 +272,47 @@ button.linkBtn:hover,
     width: 100%;
 }
 
+/* Enlace de recuperación */
+.link-olvide {
+    color: #38bdf8; 
+    text-decoration: none;
+    font-size: 0.9em;
+    transition: color 0.3s ease;
+}
+
+.link-olvide:hover {
+    color: #7dd3fc;
+    text-decoration: underline;
+}
+
+.alerta-ctech {
+    background-color: rgba(14, 165, 233, 0.1); 
+    border-left: 4px solid #0ea5e9; 
+    color: #e0f2fe; 
+    padding: 12px 15px;
+    margin-bottom: 20px;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.9em;
+    line-height: 1.4;
+    animation: desplegar 0.3s ease forwards;
+}
+
+.alerta-ctech strong {
+    color: #38bdf8;
+    display: block;
+    margin-bottom: 5px;
+    font-size: 1.05em;
+}
+
+.alerta-ctech p {
+    margin: 0;
+}
+
+@keyframes desplegar {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 @media (max-width: 900px) {
     .contenedor {
         max-width: 95%;

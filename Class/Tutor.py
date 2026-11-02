@@ -762,3 +762,60 @@ class TutorManager:
         cursor.close()
         conexion.close()
         return resultado
+    
+    def obtener_alumnos_pendientes(self, tutor_matricula):
+        """Obtiene las solicitudes de inscripción pendientes para los grupos del tutor."""
+        conexion, cursor = obtener_cursor()
+        cursor.execute(
+            """
+            SELECT ag.id as inscripcion_id, a.matricula, a.nombre_completo, a.email, g.materia_id, g.grupo, m.nombre as materia
+            FROM alumnos_grupo ag
+            INNER JOIN alumnos a ON ag.alumno_matricula = a.matricula
+            INNER JOIN grupos g ON ag.grupo_id = g.id
+            INNER JOIN materias m ON g.materia_id = m.id
+            WHERE g.tutor_matricula = %s AND ag.activo = 0
+            """,
+            (tutor_matricula,)
+        )
+        pendientes = cursor.fetchall()
+        cursor.close()
+        conexion.close()
+        return pendientes
+
+    def procesar_inscripcion(self, inscripcion_id, accion):
+        """Aprueba o rechaza una inscripción."""
+        conexion, cursor = obtener_cursor()
+        try:
+            if accion == 'aprobar':
+                cursor.execute("UPDATE alumnos_grupo SET activo = 1 WHERE id = %s", (inscripcion_id,))
+                status = "approved"
+            elif accion == 'rechazar':
+                cursor.execute("DELETE FROM alumnos_grupo WHERE id = %s", (inscripcion_id,))
+                status = "rejected"
+            else:
+                return {"status": "error"}
+            
+            conexion.commit()
+            return {"status": status}
+        except Exception as e:
+            conexion.rollback()
+            print("Error al procesar inscripción:", e)
+            return {"status": "error"}
+        finally:
+            cursor.close()
+            conexion.close()
+    
+    def eliminar_materia(self, materia_id):
+        """Desactiva lógicamente una materia del sistema para preservar el historial."""
+        conexion, cursor = obtener_cursor()
+        try:
+            cursor.execute("UPDATE materias SET activa = 0 WHERE id = %s", (materia_id,))
+            conexion.commit()
+            return {"status": "ok"}
+        except Exception as e:
+            conexion.rollback()
+            print("Error al eliminar materia:", e)
+            return {"status": "error"}
+        finally:
+            cursor.close()
+            conexion.close()

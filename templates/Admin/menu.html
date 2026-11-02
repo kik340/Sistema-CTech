@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menú Administrador</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/CSS/alumno.css') }}">
+    <style>
+        @media (min-width: 901px) { .layout-2cols { grid-template-columns: 1fr 320px !important; } }
+        .seccion { display: none; }
+        .seccion.activa { display: block; }
+        .card { background: rgba(0, 24, 46, 0.8); border: 1px solid rgba(0, 181, 226, 0.2); border-radius: 12px; padding: 20px; color: white; margin-bottom: 20px; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 20px;}
+        .campo { display: flex; flex-direction: column; }
+        .campo label { margin-bottom: 7px; color: #93c5fd; font-weight: bold; }
+        .campo input, .campo select { padding: 12px; border-radius: 10px; border: 1px solid rgba(0,181,226,0.3); background: #001026; color: white; }
+        .btn-admin { padding: 12px 20px; background: linear-gradient(135deg, #003B5C 0%, #005B82 100%); color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.3s; margin-top: 10px; }
+        .btn-admin:hover { background: linear-gradient(135deg, #005B82 0%, #007CA8 100%); }
+        .btn-menu { width: 100%; padding: 12px 14px; border: 1px solid rgba(0, 181, 226, 0.3); border-radius: 12px; cursor: pointer; font-weight: bold; background: rgba(0, 59, 92, 0.8); color: white; margin-bottom: 10px; transition: 0.2s; }
+        .btn-menu:hover, .btn-menu.activo { background: linear-gradient(135deg, #005B82 0%, #007CA8 100%); }
+        .lista-grupos li { color: #93c5fd; margin-bottom: 8px; }
+        .tabla-gestion { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .tabla-gestion th, .tabla-gestion td { padding: 10px; border-bottom: 1px solid rgba(0,181,226,0.2); text-align: left; font-size: 0.9em; }
+        .tabla-gestion th { color: #93c5fd; }
+        .btn-eliminar-rojo { background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .btn-eliminar-rojo:hover { background: #dc2626; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="contenedor-alumno layout-2cols">
+            
+            <!-- CONTENIDO PRINCIPAL -->
+            <div class="contenido-principal">
+                
+                <section class="seccion activa" id="seccion-inicio">
+                    <div class="card">
+                        <h2>Panel de Administración</h2>
+                        <p>Selecciona una opción del menú lateral para gestionar la base de datos.</p>
+                        <br>
+                        <h3 style="color: #7dd3fc;">Grupos pendientes de asignación</h3>
+                        {% if grupos_pendientes %}
+                            <ul class="lista-grupos">
+                            {% for g in grupos_pendientes %}
+                                <li>{{ g.materia }} - Grupo {{ g.grupo }} ({{ g.carrera }})</li>
+                            {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p style="color: #10b981;">Todos los grupos tienen un maestro asignado.</p>
+                        {% endif %}
+                    </div>
+                </section>
+
+                <section class="seccion" id="seccion-carrera">
+                    <div class="card">
+                        <h2>Agregar Nueva Carrera</h2>
+                        <form action="{{ url_for('admin.agregar_carrera') }}" method="post">
+                            <div class="campo">
+                                <label>Nombre de la Carrera</label>
+                                <input type="text" name="nombre" required placeholder="Ej. Ingeniería en Ciberseguridad">
+                            </div>
+                            <button type="submit" class="btn-admin">Guardar Carrera</button>
+                        </form>
+                    </div>
+                </section>
+
+                <section class="seccion" id="seccion-materia">
+                    <div class="card">
+                        <h2>Agregar Nueva Materia</h2>
+                        <form action="{{ url_for('admin.agregar_materia') }}" method="post">
+                            <div class="form-grid">
+                                <div class="campo">
+                                    <label>Carrera</label>
+                                    <select name="carrera_id" required>
+                                        <option value="">Selecciona una carrera</option>
+                                        {% for c in carreras %}
+                                        <option value="{{ c.id }}">{{ c.nombre }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="campo">
+                                    <label>Nombre de la Materia</label>
+                                    <input type="text" name="nombre" required>
+                                </div>
+                                <div class="campo">
+                                    <label>Semestre / Cuatrimestre</label>
+                                    <input type="text" name="semestre" required placeholder="Ej. 1, 2, 3...">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn-admin">Guardar Materia</button>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- NUEVA SECCIÓN: GESTIÓN Y ELIMINACIÓN DE MATERIAS -->
+                <section class="seccion" id="seccion-gestionar-materias">
+                    <div class="card">
+                        <h2>Gestión de Materias Activas</h2>
+                        <p style="color: #93c5fd; font-size: 0.9em; margin-bottom: 15px;">Aquí puedes dar de baja lógicamente las materias del sistema.</p>
+                        <div style="overflow-x: auto;">
+                            <table class="tabla-gestion">
+                               <thead>
+                                   <tr>
+                                       <th>ID</th>
+                                       <th>Carrera</th>
+                                       <th>Semestre</th>
+                                       <th>Materia</th>
+                                       <th>Acción</th>
+                                   </tr>
+                               </thead>
+                               <tbody>
+                                   {% for m in materias %}
+                                   <tr>
+                                       <td>{{ m.id }}</td>
+                                       <td>{{ m.carrera }}</td>
+                                       <td>{{ m.semestre }}</td>
+                                       <td>{{ m.nombre }}</td>
+                                       <td>
+                                           <button type="button" class="btn-eliminar-rojo" onclick="eliminarMateria('{{ m.id }}')">Eliminar</button>
+                                       </td>
+                                   </tr>
+                                   {% endfor %}
+                               </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="seccion" id="seccion-grupo">
+                    <div class="card">
+                        <h2>Crear Nuevo Grupo</h2>
+                        <form action="{{ url_for('admin.crear_grupo') }}" method="post">
+                            <div class="form-grid">
+                                <div class="campo">
+                                    <label>Materia</label>
+                                    <select name="materia_id" id="selectMateria" required onchange="actualizarSemestre()">
+                                        <option value="" data-semestre="">Selecciona una materia</option>
+                                        {% for m in materias %}
+                                        <option value="{{ m.id }}" data-semestre="{{ m.semestre }}">{{ m.carrera }} - {{ m.nombre }} (Sem {{ m.semestre }})</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <input type="hidden" name="semestre" id="inputSemestre" value="">
+
+                                <script>
+                                    function actualizarSemestre() {
+                                        var select = document.getElementById("selectMateria");
+                                        var semestreInput = document.getElementById("inputSemestre");
+                                        var selectedOption = select.options[select.selectedIndex];
+                                        semestreInput.value = selectedOption.getAttribute("data-semestre");
+                                    }
+                                </script>
+                                <div class="campo">
+                                    <label>Grupo</label>
+                                    <input type="text" name="grupo" required placeholder="Ej. A, B, C">
+                                </div>
+                                <div class="campo">
+                                    <label>Turno</label>
+                                    <select name="turno" required>
+                                        <option value="Matutino">Matutino</option>
+                                        <option value="Vespertino">Vespertino</option>
+                                    </select>
+                                </div>
+                                <div class="campo">
+                                    <label>Periodo Escolar</label>
+                                    <input type="text" name="periodo" required placeholder="Ej. Otoño 2026">
+                                </div>
+                                <div class="campo">
+                                    <label>Maestro (Opcional)</label>
+                                    <select name="tutor_matricula">
+                                        <option value="">Asignar más tarde</option>
+                                        {% for t in tutores %}
+                                        <option value="{{ t.matricula }}">{{ t.nombre_completo }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn-admin">Crear Grupo</button>
+                        </form>
+                    </div>
+                </section>
+
+                <section class="seccion" id="seccion-asignar">
+                    <div class="card">
+                        <h2>Asignar Maestro a Grupo Pendiente</h2>
+                        <form action="{{ url_for('admin.asignar_tutor') }}" method="post">
+                            <div class="form-grid">
+                                <div class="campo">
+                                    <label>Grupo sin Maestro</label>
+                                    <select name="grupo_id" required>
+                                        <option value="">Selecciona un grupo</option>
+                                        {% for g in grupos_pendientes %}
+                                        <option value="{{ g.id }}">{{ g.materia }} - Grupo {{ g.grupo }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="campo">
+                                    <label>Maestro</label>
+                                    <select name="tutor_matricula" required>
+                                        <option value="">Selecciona al docente</option>
+                                        {% for t in tutores %}
+                                        <option value="{{ t.matricula }}">{{ t.nombre_completo }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn-admin">Asignar Maestro</button>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- NUEVA SECCIÓN: REESTABLECER CONTRASEÑAS -->
+                <section class="seccion" id="seccion-password">
+                    <div class="card">
+                        <h2>Reestablecer Contraseña de Usuario</h2>
+                        <form id="formReestablecerPassword" onsubmit="reestablecerPassword(event)">
+                            <div class="form-grid">
+                                <div class="campo">
+                                    <label>Matrícula / ID del Usuario</label>
+                                    <input type="text" name="matricula" id="resetMatricula" required placeholder="Ej. 202400000 o TT260001">
+                                </div>
+                                <div class="campo">
+                                    <label>Rol del Usuario</label>
+                                    <select name="tipo" id="resetTipo" required>
+                                        <option value="">Selecciona el rol</option>
+                                        <option value="alumno">Alumno</option>
+                                        <option value="tutor">Tutor / Maestro</option>
+                                        <option value="laboratorista">Laboratorista</option>
+                                        <option value="externo">Externo</option>
+                                    </select>
+                                </div>
+                                <div class="campo" style="grid-column: span 2;">
+                                    <label>Nueva Contraseña Temporal</label>
+                                    <input type="password" name="nueva_password" id="resetPassword" required placeholder="Escribe la nueva contraseña">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn-admin">Actualizar Contraseña</button>
+                        </form>
+                    </div>
+                </section>
+
+            </div>
+            
+            <!-- BARRA LATERAL (SIDEBAR) -->
+            <aside class="panel panel-menu">
+                <h2>Administrador</h2>
+                <div class="perfil">
+                    <img src="{{ url_for('static', filename='resources/logo.png') }}" style="background: white;">
+                    <p>{{ nombre }}</p>
+                </div>
+                <div class="menu-opciones">
+                    <button class="btn-menu activo" data-seccion="seccion-inicio">Inicio</button>
+                    <button class="btn-menu" data-seccion="seccion-carrera">Agregar Carrera</button>
+                    <button class="btn-menu" data-seccion="seccion-materia">Agregar Materia</button>
+                    <button class="btn-menu" data-seccion="seccion-gestionar-materias">Eliminar Materias</button>
+                    <button class="btn-menu" data-seccion="seccion-grupo">Crear Grupo</button>
+                    <button class="btn-menu" data-seccion="seccion-asignar">Asignar Maestro</button>
+                    <button class="btn-menu" data-seccion="seccion-password">Reestablecer Password</button>
+                    <a href="{{ url_for('auth.cerrar_sesion') }}" class="btn-admin" style="background: transparent; border: 1px solid rgba(0,181,226,0.3); text-align: center; text-decoration: none; display: block;">Cerrar sesión</a>
+                </div>
+            </aside>
+
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='assets/JS/alertas.js') }}"></script>
+    <script>
+        // Lógica de navegación entre secciones
+        const botonesMenu = document.querySelectorAll(".btn-menu");
+        const secciones = document.querySelectorAll(".seccion");
+
+        botonesMenu.forEach(boton => {
+            boton.addEventListener("click", () => {
+                const destino = boton.getAttribute("data-seccion");
+                botonesMenu.forEach(b => b.classList.remove("activo"));
+                secciones.forEach(s => s.classList.remove("activa"));
+                boton.classList.add("activo");
+                document.getElementById(destino).classList.add("activa");
+            });
+        });
+
+        // Función AJAX para eliminar materia
+        function eliminarMateria(id) {
+            Swal.fire({
+                title: '¿Estás seguro?',
+                text: "La materia será dada de baja del sistema.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#003B5C',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch('/admin/eliminar_materia/' + id, { method: 'POST' })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status === 'ok') {
+                            Swal.fire('¡Eliminado!', 'La materia ha sido desactivada.', 'success')
+                            .then(() => location.reload());
+                        } else {
+                            Swal.fire('Error', 'No se pudo procesar la solicitud.', 'error');
+                        }
+                    }).catch(() => {
+                        Swal.fire('Error', 'Ocurrió un fallo en la red.', 'error');
+                    });
+                }
+            });
+        }
+
+        // Función AJAX para reestablecer contraseña
+        function reestablecerPassword(e) {
+            e.preventDefault();
+            const formData = new FormData(document.getElementById('formReestablecerPassword'));
+
+            Swal.fire({
+                title: '¿Actualizar contraseña?',
+                text: "Se modificará la clave de acceso para este usuario.",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#0ea5e9',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Sí, actualizar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch('/admin/reestablecer_password', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status === 'ok') {
+                            Swal.fire('¡Éxito!', 'Contraseña actualizada correctamente.', 'success');
+                            document.getElementById('formReestablecerPassword').reset();
+                        } else if (data.status === 'not_found') {
+                            Swal.fire('Aviso', 'No se encontró ningún usuario con esa matrícula y rol.', 'warning');
+                        } else {
+                            Swal.fire('Error', 'No se pudo actualizar la contraseña.', 'error');
+                        }
+                    }).catch(() => {
+                        Swal.fire('Error', 'Ocurrió un error al conectar con el servidor.', 'error');
+                    });
+                }
+            });
+        }
+    </script>
+</body>
+</html>

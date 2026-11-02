@@ -24,7 +24,7 @@ class PdfManager:
         altura_franja = 95
         y_franja = self.alto - altura_franja
 
-        self.c.setFillColor(colors.HexColor("#b30000"))
+        self.c.setFillColor(colors.HexColor("#0066CC"))
         self.c.rect(0, y_franja, self.ancho, altura_franja, fill=1, stroke=0)
 
         # Buscar logo

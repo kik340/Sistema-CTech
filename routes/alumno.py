@@ -161,7 +161,7 @@ def descargar_qr_pdf():
 
     pdf = PdfQrAlumno(
         logo_path="static/resources/logo.png",
-        nombre_escuela="Instituto Tecnológico Superior de Atlixco - ITSA",
+        nombre_escuela="Benmérita Universidad Autónoma de Puebla - BUAP",
         nombre_alumno=nombre_alumno,
         matricula=matricula,
         email=email,
@@ -228,8 +228,12 @@ def inscribirme_grupo(grupo_id):
 
     resultado = usuario.inscribir_alumno_a_grupo(session["matricula"], grupo_id)
 
-    if resultado["status"] == "ok":
-        return redirect(url_for("alumno.menu_alumno", r="group_joined"))
+    # NUEVOS ESTADOS DE ESPERA
+    if resultado["status"] == "solicitud_enviada" or resultado["status"] == "ok":
+        return redirect(url_for("alumno.menu_alumno", r="solicitud_enviada"))
+        
+    if resultado["status"] == "pending":
+        return redirect(url_for("alumno.menu_alumno", r="pending"))
 
     if resultado["status"] == "student_not_found":
         return redirect(url_for("alumno.menu_alumno", r="student_not_found"))
@@ -241,7 +245,7 @@ def inscribirme_grupo(grupo_id):
         return redirect(url_for("alumno.menu_alumno", r="wrong_career"))
 
     if resultado["status"] == "exists":
-        return redirect(url_for("alumno.menu_alumno", r="student_group_exists"))
+        return redirect(url_for("alumno.menu_alumno", r="exists"))
 
     return redirect(url_for("alumno.menu_alumno", r="error"))
 

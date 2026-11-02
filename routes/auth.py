@@ -7,6 +7,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from Class.User import User
 from Class.Tutor import TutorManager
 from utils.helpers import login_requerido
+from werkzeug.security import generate_password_hash
 
 auth_bp = Blueprint("auth", __name__)
 usuario = User()
@@ -64,52 +65,47 @@ def verificar_usuario():
     return redirect(url_for("auth.index", r="tipo_wrong"))
 
 
-@auth_bp.route("/solicitar_registro", methods=["POST"])
-def solicitar_registro():
+@auth_bp.route("/registrarse", methods=["POST"])
+def registrarse():
+    matricula = request.form.get("matricula", "").strip()
     nombre = request.form.get("nombre", "").strip()
-    ap_paterno = request.form.get("ap_paterno", "").strip()
-    ap_materno = request.form.get("ap_materno", "").strip()
-    correo_temporal = request.form.get("correo_temporal", "").strip()
-    password = request.form.get("password", "").strip()
-    tipo_solicitud = request.form.get("tipo_solicitud", "").strip()
+    apellidos = request.form.get("apellidos", "").strip()
+    email = request.form.get("email", "").strip().lower()
     carrera_id = request.form.get("carrera_id", "").strip()
-    anio_ingreso = request.form.get("anio_ingreso", "").strip()
-    motivo = request.form.get("motivo", "").strip()
+    tipo_usuario = request.form.get("tipo_usuario", "").strip()
+    password = request.form.get("password", "")
+    confirm_password = request.form.get("confirm_password", "")
 
-    if (
-        nombre == ""
-        or ap_paterno == ""
-        or ap_materno == ""
-        or correo_temporal == ""
-        or password == ""
-        or tipo_solicitud == ""
-    ):
-        return redirect(url_for("auth.index", r="empty_request"))
+    if not all([matricula, nombre, apellidos, email, carrera_id, tipo_usuario, password]):
+        return redirect(url_for("auth.index", r="empty_register"))
 
-    if tipo_solicitud == "alumno" and (carrera_id == "" or anio_ingreso == ""):
-        return redirect(url_for("auth.index", r="empty_request"))
+    if password != confirm_password:
+        return redirect(url_for("auth.index", r="password_no_match"))
 
-    if tipo_solicitud == "externo" and motivo == "":
-        return redirect(url_for("auth.index", r="empty_request"))
+    # BLOQUEO DE CORREOS NORMALES Y VALIDACIÓN POR ROL
+    if tipo_usuario == "alumno" and not (email.endswith("@alumno.buap.mx") or email.endswith("@alm.buap.mx")):
+        return redirect(url_for("auth.index", r="email_invalido_alumno"))
+    
+    if tipo_usuario in ["tutor", "laboratorista"] and not email.endswith("@correo.buap.mx"):
+        return redirect(url_for("auth.index", r="email_invalido_personal"))
 
-    try:
-        anio_ingreso_int = int(anio_ingreso) if anio_ingreso != "" else None
-    except Exception:
-        return redirect(url_for("auth.index", r="empty_request"))
+    partes = apellidos.split(" ", 1)
+    ap_paterno = partes[0]
+    ap_materno = partes[1] if len(partes) > 1 else ""
 
     datos = {
+        "matricula": matricula,
         "nombre": nombre,
         "ap_paterno": ap_paterno,
         "ap_materno": ap_materno,
-        "correo_temporal": correo_temporal,
-        "password": password,
-        "tipo_solicitud": tipo_solicitud,
-        "carrera_id": int(carrera_id) if carrera_id != "" else None,
-        "anio_ingreso": anio_ingreso_int,
-        "motivo": motivo if motivo != "" else None,
+        "nombre_completo": f"{nombre} {apellidos}",
+        "email": email,
+        "password": generate_password_hash(password),
+        "carrera_id": int(carrera_id),
+        "tipo_usuario": tipo_usuario
     }
 
-    resultado = usuario.crear_solicitud(datos)
+    resultado = usuario.registro_directo_general(datos)
     return redirect(url_for("auth.index", r=resultado["status"]))
 
 

@@ -7,11 +7,13 @@
     <title>Inicio</title>
     <link rel="stylesheet" href="{{url_for('static', filename='assets/CSS/styles.css')}}">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 
 <body>
 
     <div class="contenedor">
+        <!-- PANEL DE LOGIN -->
         <div class="panel panel-login" id="panelLogin">
             <h2>Iniciar Sesión</h2>
             <form action="/verificar_usuario" method="post">
@@ -27,62 +29,88 @@
                     </button>
                 </div>
 
-                <button type="submit" class="btn">Entrar</button>
+                <!-- Captcha -->
+                <div class="campo" style="display: flex; justify-content: center; width: 100%; margin: 15px 0;">
+                    <div class="g-recaptcha" data-sitekey="6LfEawwuAAAAADTLDbkJ5hRFXrgb4UO_cOvp8fwq"></div>
+                </div>
 
-                <p>¿No tienes cuenta?
-                    <button type="button" id="btnRegistro" class="linkBtn">Solicitar registro</button>
-                </p>
+                <!-- Recuadro informativo estilo CTech (Oculto por defecto) -->
+                <div id="cajaRecuperacion" style="display: none; background-color: #f0f9ff; border-left: 4px solid #0ea5e9; color: #0369a1; padding: 12px 15px; margin-bottom: 15px; font-size: 0.85em; text-align: left; border-radius: 0 4px 4px 0;">
+                    <strong style="color: #0284c7; display: block; margin-bottom: 4px; font-size: 1.1em;">¡Importante!</strong>
+                    Si no recuerdas la contraseña de tu cuenta, por favor contacta al Administrador del sistema para solicitar el reinicio.
+                </div>
+
+                <!-- Botón Principal -->
+                <button type="submit" class="btn" style="width: 100%; margin-bottom: 15px;">Entrar</button>
+
+                <!-- Enlaces de ayuda -->
+                <div style="width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;">
+                    <span style="color: #6b7280; font-size: 0.9em;">
+                        ¿No tienes cuenta? 
+                        <button type="button" id="btnRegistro" class="linkBtn" style="color: #0ea5e9; font-weight: bold; background: none; border: none; padding: 0; font-size: 1em; cursor: pointer;">Registrarse</button>
+                    </span>
+                    <a href="#" onclick="mostrarAvisoRecuperacion(event)" style="color: #0ea5e9; text-decoration: none; font-size: 0.9em;">¿Olvidaste tu contraseña?</a>
+                </div>
             </form>
         </div>
 
+        <!-- PANEL DE REGISTRO -->
         <div class="panel panel-register" id="panelRegister">
-            <h2>Solicitar Registro</h2>
+            <h2>Registrarse</h2>
 
-            <form action="/solicitar_registro" method="post">
-                <label>Nombre:</label>
-                <input type="text" name="nombre" placeholder="Tu nombre">
+            <form action="/registrarse" method="post">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>
+                        <label>Nombre(s):</label>
+                        <input type="text" name="nombre" placeholder="Tu nombre" required>
+                    </div>
+                    <div>
+                        <label>Apellidos:</label>
+                        <input type="text" name="apellidos" placeholder="Tus apellidos" required>
+                    </div>
+                </div>
 
-                <label>Apellido paterno:</label>
-                <input type="text" name="ap_paterno" placeholder="Apellido paterno">
+                <label>Rol en la institución:</label>
+                <select name="tipo_usuario" required>
+                    <option value="">Selecciona tu rol</option>
+                    <option value="alumno">Alumno</option>
+                    <option value="tutor">Maestro / Tutor</option>
+                    <option value="laboratorista">Laboratorista</option>
+                </select>
 
-                <label>Apellido materno:</label>
-                <input type="text" name="ap_materno" placeholder="Apellido materno">
+                <label>Carrera o Facultad:</label>
+                <select name="carrera_id" required>
+                    <option value="">Selecciona tu carrera</option>
+                    {% for carrera in carreras %}
+                    <option value="{{ carrera.id }}">{{ carrera.nombre }}</option>
+                    {% endfor %}
+                </select>
 
-                <label>Correo temporal:</label>
-                <input type="email" name="correo_temporal" placeholder="tu_correo@gmail.com">
+                <label>Matrícula BUAP / ID Empleado:</label>
+                <input type="text" name="matricula" placeholder="Ej. 202400000" maxlength="9" required>
+
+                <label>Correo Institucional:</label>
+                <input type="email" name="email" placeholder="ejemplo@alm.buap.mx" 
+                    pattern="^.+@(alumno\.buap\.mx|alm\.buap\.mx|correo\.buap\.mx)$" 
+                    title="Solo se admiten correos @alm.buap.mx, @alumno.buap.mx o @correo.buap.mx" required>
 
                 <label>Contraseña:</label>
                 <div class="input-pass">
-                    <input type="password" name="password" placeholder="********">
+                    <input type="password" name="password" placeholder="Crea una contraseña" required>
                     <button type="button" class="btn-ojo">
-                        <img src="{{ url_for('static', filename='resources/ojo-cerrado.png') }}"
-                            alt="Mostrar contraseña">
+                        <img src="{{ url_for('static', filename='resources/ojo-cerrado.png') }}" alt="Mostrar">
                     </button>
                 </div>
-                <select name="tipo_solicitud" id="tipo_solicitud">
-                    <option value="alumno">Alumno</option>
-                    <option value="externo">Externo</option>
-                </select>
 
-
-                <div id="bloqueCarrera">
-                    <label>Carrera:</label>
-                    <select name="carrera_id" id="carrera_id">
-                        <option value="">Selecciona una carrera</option>
-                        {% for carrera in carreras %}
-                        <option value="{{ carrera.id }}">{{ carrera.nombre }}</option>
-                        {% endfor %}
-                    </select>
-
-                    <label>Año de ingreso:</label>
-                    <input type="number" name="anio_ingreso" id="anio_ingreso" placeholder="Ej. 2023" min="2000"
-                        max="2099">
+                <label>Confirmar Contraseña:</label>
+                <div class="input-pass">
+                    <input type="password" name="confirm_password" placeholder="Repite tu contraseña" required>
+                    <button type="button" class="btn-ojo">
+                        <img src="{{ url_for('static', filename='resources/ojo-cerrado.png') }}" alt="Mostrar">
+                    </button>
                 </div>
-                <div id="bloqueMotivo" class="campo-oculto">
-                    <label>Motivo de visita:</label>
-                    <input type="text" name="motivo" id="motivo" placeholder="Motivo del acceso temporal">
-                </div>
-                <button type="submit" class="btn">Enviar solicitud</button>
+
+                <button type="submit" class="btn">Completar Registro</button>
 
                 <p>¿Ya tienes cuenta?
                     <button type="button" id="btnLogin" class="linkBtn">Iniciar Sesión</button>
@@ -90,14 +118,28 @@
             </form>
         </div>
 
+        <!-- PANEL AZUL (Tapa) -->
         <div class="panel-azul mover-derecha" id="panelAzul">
             <div class="logo-circulo">
                 <img src="{{url_for('static', filename='resources/logo.png')}}" alt="Logo ITSA">
             </div>
-            <h1>Benemértita Universidad Autónoma de Puebla</h1>
+            <h1>Benemérita Universidad Autónoma de Puebla</h1>
         </div>
+
     </div>
 
+    <!-- Scripts -->
+    <script>
+        function mostrarAvisoRecuperacion(e) {
+            e.preventDefault(); 
+            var caja = document.getElementById('cajaRecuperacion');
+            if (caja.style.display === 'none' || caja.style.display === '') {
+                caja.style.display = 'block';
+            } else {
+                caja.style.display = 'none';
+            }
+        }
+    </script>
     <script src="{{url_for('static', filename='assets/JS/alertas.js')}}"></script>
     <script src="{{url_for('static', filename='assets/JS/script.js')}}"></script>
 </body>

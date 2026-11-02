@@ -34,7 +34,7 @@
                 <!-- Botón para escanear QR del tutor -->
                 <div class="btn-escaneo-container">
                     <button id="btnEscanearTutor" class="btn-escaneo-tutor">
-                        📷 Escanear QR del Tutor
+                         Escanear QR del Tutor
                     </button>
                 </div>
             </div>
@@ -63,9 +63,13 @@
                         </div>
 
                         <form action="{{ url_for('alumno.inscribirme_grupo', grupo_id=g.id) }}" method="post">
-                            <button type="submit" class="btn-inscribirme" {% if g.inscrito==1 %}disabled{% endif %}>
-                                {% if g.inscrito == 1 %}Ya inscrito{% else %}Inscribirme{% endif %}
-                            </button>
+                            {% if g.inscrito == 1 %}
+                                <button type="button" class="btn-inscribirme" disabled style="background: #10b981; color: white; border: none;">Ya inscrito</button>
+                            {% elif g.inscrito == 2 %}
+                                <button type="button" class="btn-inscribirme" disabled style="background: #f59e0b; color: white; border: none;">En espera de aprobación</button>
+                            {% else %}
+                                <button type="submit" class="btn-inscribirme">Inscribirme</button>
+                            {% endif %}
                         </form>
                     </article>
                     {% endfor %}
@@ -90,14 +94,14 @@
                 <div class="menu-opciones">
                     <!-- Botón para abrir modal de modificar usuario -->
                     <button id="btnAbrirModificar" class="btn-modificar-usuario">
-                        🔧 Modificar contraseña
+                         Modificar contraseña
                     </button>
 
                     <a href="{{ url_for('alumno.descargar_qr_pdf') }}">Generar QR</a>
 
                     <!-- Botón de escáner en el menú lateral -->
                     <button id="btnEscanearTutorSidebar" class="btn-escaneo-tutor">
-                        📷 Escanear QR del Tutor
+                         Escanear QR del Tutor
                     </button>
 
                     <div class="bloque-subida">
@@ -162,7 +166,7 @@
             </div>
 
             <div class="escaneo-acciones">
-                <button id="btnSubirFotoQR" class="btn-subir-foto">📁 Subir foto del QR</button>
+                <button id="btnSubirFotoQR" class="btn-subir-foto">Subir foto del QR</button>
                 <button id="btnCancelarEscaner" class="btn-cancelar">Cancelar</button>
             </div>
 
@@ -175,7 +179,7 @@
         <div class="modal-modificar-contenido">
             <button class="cerrar-modificar" id="cerrarModificar">×</button>
 
-            <h2>🔧 Modificar contraseña</h2>
+            <h2>Modificar contraseña</h2>
 
             <form id="formModificarUsuario" action="{{ url_for('auth.modificar_mi_usuario') }}" method="post">
                 <div class="grid-form">

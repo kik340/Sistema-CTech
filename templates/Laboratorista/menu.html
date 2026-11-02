@@ -9,263 +9,259 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='assets/CSS/lab.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/CSS/alumno.css') }}">
+    
+    <style>
+        @media (min-width: 901px) { .layout-2cols { grid-template-columns: 1fr 320px !important; } }
+        .seccion { display: none; }
+        .seccion.activa { display: block; }
+        
+        .grid-dispositivos { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-top: 18px; }
+        .card-dispositivo { background: rgba(0, 24, 46, 0.8); border: 1px solid rgba(0, 181, 226, 0.2); border-radius: 18px; padding: 18px; text-align: center; color: white; transition: transform 0.3s, box-shadow 0.3s; }
+        .card-dispositivo:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0, 181, 226, 0.2); }
+        .card-dispositivo.disponible { border-color: #22c55e; }
+        .card-dispositivo.prestado { border-color: #ef4444; }
+        .card-dispositivo.mantenimiento { border-color: #f59e0b; }
+        .img-box { width: 80px; height: 80px; background: rgba(255,255,255,0.1); border-radius: 12px; margin: 0 auto 10px; padding: 10px; }
+        .img-box img { width: 100%; height: 100%; object-fit: contain; }
+        .nombre-ocupante { margin-top: 10px; font-size: 13px; font-weight: bold; color: #7dd3fc; }
+        
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 15px;}
+        .campo { display: flex; flex-direction: column; }
+        .campo label { margin-bottom: 7px; font-weight: bold; color: #93c5fd; }
+        .campo input, .campo select, .campo textarea { padding: 12px; border-radius: 10px; border: 1px solid rgba(0, 181, 226, 0.3); background: #001026; color: white; }
+        .btn-form, .btn-excel { padding: 12px 20px; background: linear-gradient(135deg, #003B5C 0%, #005B82 100%); color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.3s;}
+        .btn-form:hover, .btn-excel:hover { background: linear-gradient(135deg, #005B82 0%, #007CA8 100%); }
+
+        .prestamo-layout { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .scanner { background: #001026; border: 1px solid rgba(0,181,226,0.3); border-radius: 16px; min-height: 260px; display: flex; align-items: center; justify-content: center; color: #93c5fd; padding: 10px; }
+        .datos-usuario { background: rgba(0, 24, 46, 0.8); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid rgba(0, 181, 226, 0.2); line-height: 1.6;}
+        
+        .paginacion { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
+        .paginacion a, .paginacion span { padding: 8px 15px; border-radius: 10px; background: rgba(0, 59, 92, 0.8); color: white; text-decoration: none; border: 1px solid rgba(0, 181, 226, 0.3); }
+        .paginacion .actual { background: #00B5E2; font-weight: bold; color: #001026; }
+        .excel-box { text-align: center; padding: 30px; background: rgba(0, 24, 46, 0.8); border-radius: 12px; border: 1px solid rgba(0, 181, 226, 0.2); }
+
+        .btn-menu { width: 100%; padding: 12px 14px; border: 1px solid rgba(0, 181, 226, 0.3); border-radius: 12px; cursor: pointer; font-weight: bold; background: rgba(0, 59, 92, 0.8); color: white; text-align: center; margin-bottom: 10px; transition: 0.2s; }
+        .btn-menu:hover, .btn-menu.activo { background: linear-gradient(135deg, #005B82 0%, #007CA8 100%); box-shadow: 0 4px 12px rgba(0, 181, 226, 0.25); }
+    </style>
 </head>
 
 <body>
-    <div class="contenedor">
-        <h1 class="titulo">Panel del Laboratorista - {{ nombre }}</h1>
+    <div class="container">
+        <button class="btn-menu-movil" id="btnMenuMovil">☰ Menú</button>
 
-        <div class="menu-mobile">
-            <button type="button" id="btnToggleMenu" class="btn-menu-mobile">☰ Menú</button>
-        </div>
+        <div class="contenedor-alumno layout-2cols">
+            
+            <!-- CONTENIDO PRINCIPAL -->
+            <div class="contenido-principal">
+                <section class="seccion activa" id="seccion-dispositivos">
+                    <h2>Dispositivos en uso</h2>
+                    <div class="grid-dispositivos" id="gridDispositivos">
+                        {% for equipo in equipos %}
+                        <div class="card-dispositivo {{ equipo.estado }}">
+                            <div class="img-box">
+                                <img src="{{ url_for('static', filename='resources/monitor.png') }}" alt="Equipo">
+                            </div>
+                            <h3>{{ equipo.nombre_equipo }}</h3>
+                            {% if equipo.estado != 'disponible' and equipo.nombre_usuario %}
+                            <p class="nombre-ocupante">{{ equipo.nombre_usuario }}</p>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
 
-        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+                    <div class="paginacion">
+                        {% if pagina > 1 %}
+                        <a href="{{ url_for('laboratorista.menu_laboratorista', page=pagina-1) }}">Anterior</a>
+                        {% endif %}
+                        {% for p in range(1, total_paginas + 1) %}
+                            {% if p == pagina %}
+                            <span class="actual">{{ p }}</span>
+                            {% else %}
+                            <a href="{{ url_for('laboratorista.menu_laboratorista', page=p) }}">{{ p }}</a>
+                            {% endif %}
+                        {% endfor %}
+                        {% if pagina < total_paginas %} 
+                        <a href="{{ url_for('laboratorista.menu_laboratorista', page=pagina+1) }}">Siguiente</a>
+                        {% endif %}
+                    </div>
+                </section>
 
-        <aside class="sidebar-mobile" id="sidebarMobile">
-            <div class="sidebar-header">
-                <span id="sidebarTitulo">Dispositivos en uso</span>
-                <button type="button" id="btnCerrarSidebar" class="btn-cerrar-sidebar">✕</button>
-            </div>
+                <section class="seccion" id="seccion-registrar">
+                    <h2>Registrar equipo</h2>
+                    <form action="{{ url_for('laboratorista.registrar_equipo') }}" method="post">
+                        <div class="form-grid">
+                            <div class="campo">
+                                <label>Nombre del equipo</label>
+                                <input type="text" name="nombre_equipo" required>
+                            </div>
+                            <div class="campo">
+                                <label>Categoría</label>
+                                <input type="text" name="categoria" required>
+                            </div>
+                            <div class="campo">
+                                <label>Marca</label>
+                                <input type="text" name="marca">
+                            </div>
+                            <div class="campo">
+                                <label>Modelo</label>
+                                <input type="text" name="modelo">
+                            </div>
+                            <div class="campo">
+                                <label>Número de serie</label>
+                                <input type="text" name="numero_serie">
+                            </div>
+                            <div class="campo">
+                                <label>Ubicación</label>
+                                <input type="text" name="ubicacion" placeholder="Lab 1, Lab 2..." required>
+                            </div>
+                            <div class="campo">
+                                <label>Estado</label>
+                                <select name="estado">
+                                    <option value="disponible">Disponible</option>
+                                    <option value="mantenimiento">Mantenimiento</option>
+                                    <option value="baja">Baja</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="campo" style="margin-bottom: 15px;">
+                            <label>Descripción</label>
+                            <textarea name="descripcion" style="min-height: 80px;"></textarea>
+                        </div>
+                        <button type="submit" class="btn-form">Guardar equipo</button>
+                    </form>
+                </section>
 
-            <div class="sidebar-opciones" id="menuMobileOpciones">
-                <button class="btn-menu activo" data-seccion="seccion-dispositivos">Dispositivos en uso</button>
-                <button class="btn-menu" data-seccion="seccion-registrar">Registrar equipo</button>
-                <button class="btn-menu" data-seccion="seccion-prestamo">Préstamo</button>
+                <section class="seccion" id="seccion-prestamo">
+                    <h2>Préstamo por QR</h2>
+                    <div class="prestamo-layout">
+                        <div class="prestamo-izquierda">
+                            <div id="reader" class="scanner">Activa esta sección para iniciar la cámara</div>
+                        </div>
+                        <div class="prestamo-derecha">
+                            <div class="datos-usuario">
+                                <strong>Matrícula:</strong> <span id="txtMatricula">-</span><br>
+                                <strong>Nombre:</strong> <span id="txtNombre">-</span><br>
+                                <strong>Correo:</strong> <span id="txtCorreo">-</span><br>
+                                <strong>Tipo:</strong> <span id="txtTipo">-</span><br>
+                                <strong>Carrera:</strong> <span id="txtCarrera">-</span>
+                            </div>
+                            <form action="{{ url_for('laboratorista.registrar_prestamo') }}" method="post">
+                                <input type="hidden" name="matricula_usuario" id="matricula_usuario">
+                                <input type="hidden" name="tipo_usuario" id="tipo_usuario">
+                                <div class="form-grid">
+                                    <div class="campo">
+                                        <label>Equipo</label>
+                                        <select name="equipo_id" required>
+                                            <option value="">Selecciona un equipo</option>
+                                            {% for equipo in equipos_disponibles %}
+                                            <option value="{{ equipo.id }}">{{ equipo.codigo_equipo }} - {{ equipo.nombre_equipo }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="campo">
+                                        <label>Fecha límite</label>
+                                        <input type="datetime-local" name="fecha_limite">
+                                    </div>
+                                </div>
+                                <div class="campo" style="margin-bottom: 15px;">
+                                    <label>Observaciones</label>
+                                    <textarea name="observaciones" style="min-height: 60px;"></textarea>
+                                </div>
+                                <button type="submit" class="btn-form">Registrar préstamo</button>
+                            </form>
+                        </div>
+                    </div>
+                </section>
+
                 <section class="seccion" id="seccion-excel">
                     <h2>Generar Excel</h2>
                     <div class="excel-box">
-                        <p>Desde aquí puedes descargar la bitácora de uso general.</p>
-                        <button type="button" id="btnGenerarExcel" class="btn-excel">
-                            📊 Generar y Descargar Bitácora
-                        </button>
+                        <p style="color: #e2e8f0; margin-bottom: 20px;">Desde aquí puedes descargar la bitácora de uso general.</p>
+                        <a href="{{ url_for('laboratorista.generar_excel') }}" class="btn-excel" style="display: inline-block; width: auto;">📊 Descargar Excel</a>
                     </div>
                 </section>
-                <button class="btn-menu" data-seccion="seccionModificarUsuario">Modificar usuario</button>
-                <a href="{{ url_for('auth.cerrar_sesion') }}">Cerrar sesión</a>
-            </div>
-        </aside>
 
-        <div class="menu-botones">
-            <button class="btn-menu activo" data-seccion="seccion-dispositivos">Dispositivos en uso</button>
-            <button class="btn-menu" data-seccion="seccion-registrar">Registrar equipo</button>
-            <button class="btn-menu" data-seccion="seccion-prestamo">Préstamo</button>
-            <button class="btn-menu" data-seccion="seccion-excel">Excel</button>
-            <button class="btn-menu" data-seccion="seccionModificarUsuario">Modificar usuario</button>
-            <a href="{{ url_for('auth.cerrar_sesion') }}" class="btn-link-menu">Cerrar sesión</a>
-        </div>
-
-        <section class="seccion activa" id="seccion-dispositivos">
-            <h2>Dispositivos en uso</h2>
-
-            <div class="grid-dispositivos" id="gridDispositivos">
-                {% for equipo in equipos %}
-                <div class="card-dispositivo {{ equipo.estado }}">
-                    <div class="img-box">
-                        <img src="{{ url_for('static', filename='resources/monitor.png') }}" alt="Equipo">
-                    </div>
-                    <h3>{{ equipo.nombre_equipo }}</h3>
-
-                    {% if equipo.estado != 'disponible' and equipo.nombre_usuario %}
-                    <p class="nombre-ocupante">{{ equipo.nombre_usuario }}</p>
-                    {% endif %}
-                </div>
-                {% endfor %}
-            </div>
-
-            <div class="paginacion">
-                {% if pagina > 1 %}
-                <a href="{{ url_for('laboratorista.menu_laboratorista', page=pagina-1) }}">Anterior</a>
-                {% endif %}
-
-                {% for p in range(1, total_paginas + 1) %}
-                {% if p == pagina %}
-                <span class="actual">{{ p }}</span>
-                {% else %}
-                <a href="{{ url_for('laboratorista.menu_laboratorista', page=p) }}">{{ p }}</a>
-                {% endif %}
-                {% endfor %}
-
-                {% if pagina < total_paginas %} <a
-                    href="{{ url_for('laboratorista.menu_laboratorista', page=pagina+1) }}">Siguiente</a>
-                    {% endif %}
-            </div>
-        </section>
-
-        <section class="seccion" id="seccion-registrar">
-            <h2>Registrar equipo</h2>
-            <form action="{{ url_for('laboratorista.registrar_equipo') }}" method="post">
-                <div class="form-grid">
-                    <div class="campo">
-                        <label>Nombre del equipo</label>
-                        <input type="text" name="nombre_equipo" required>
-                    </div>
-
-                    <div class="campo">
-                        <label>Categoría</label>
-                        <input type="text" name="categoria" required>
-                    </div>
-
-                    <div class="campo">
-                        <label>Marca</label>
-                        <input type="text" name="marca">
-                    </div>
-
-                    <div class="campo">
-                        <label>Modelo</label>
-                        <input type="text" name="modelo">
-                    </div>
-
-                    <div class="campo">
-                        <label>Número de serie</label>
-                        <input type="text" name="numero_serie">
-                    </div>
-
-                    <div class="campo">
-                        <label>Ubicación</label>
-                        <input type="text" name="ubicacion" placeholder="Lab 1, Lab 2, Lab 3..." required>
-                    </div>
-
-                    <div class="campo">
-                        <label>Estado</label>
-                        <select name="estado">
-                            <option value="disponible">Disponible</option>
-                            <option value="mantenimiento">Mantenimiento</option>
-                            <option value="baja">Baja</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="campo">
-                    <label>Descripción</label>
-                    <textarea name="descripcion"></textarea>
-                </div>
-
-                <button type="submit" class="btn-form">Guardar equipo</button>
-            </form>
-        </section>
-
-        <section class="seccion" id="seccion-prestamo">
-            <h2>Préstamo por QR</h2>
-
-            <div class="prestamo-layout">
-                <div class="prestamo-izquierda">
-                    <div id="reader" class="scanner">Activa esta sección para iniciar la cámara</div>
-                </div>
-
-                <div class="prestamo-derecha">
-                    <div class="datos-usuario">
-                        <strong>Matrícula:</strong> <span id="txtMatricula">-</span><br>
-                        <strong>Nombre:</strong> <span id="txtNombre">-</span><br>
-                        <strong>Correo:</strong> <span id="txtCorreo">-</span><br>
-                        <strong>Tipo:</strong> <span id="txtTipo">-</span><br>
-                        <strong>Carrera:</strong> <span id="txtCarrera">-</span>
-                    </div>
-
-                    <form action="{{ url_for('laboratorista.registrar_prestamo') }}" method="post">
-                        <input type="hidden" name="matricula_usuario" id="matricula_usuario">
-                        <input type="hidden" name="tipo_usuario" id="tipo_usuario">
-
+                <section class="seccion" id="seccionModificarUsuario">
+                    <h2>🔧 Modificar contraseña</h2>
+                    <form action="{{ url_for('auth.modificar_mi_usuario') }}" method="post">
                         <div class="form-grid">
                             <div class="campo">
-                                <label>Equipo</label>
-                                <select name="equipo_id" required>
-                                    <option value="">Selecciona un equipo</option>
-                                    {% for equipo in equipos_disponibles %}
-                                    <option value="{{ equipo.id }}">{{ equipo.codigo_equipo }} - {{ equipo.nombre_equipo
-                                        }}</option>
-                                    {% endfor %}
-                                </select>
+                                <label>N° Empleado / Matrícula</label>
+                                <input type="text" value="{{ datos_usuario.matricula if datos_usuario else '' }}" readonly>
                             </div>
-
                             <div class="campo">
-                                <label>Fecha límite</label>
-                                <input type="datetime-local" name="fecha_limite">
+                                <label>Nombre</label>
+                                <input type="text" value="{{ datos_usuario.nombre if datos_usuario else '' }}" readonly>
+                            </div>
+                            <div class="campo">
+                                <label>Apellido paterno</label>
+                                <input type="text" value="{{ datos_usuario.ap_paterno if datos_usuario else '' }}" readonly>
+                            </div>
+                            <div class="campo">
+                                <label>Apellido materno</label>
+                                <input type="text" value="{{ datos_usuario.ap_materno if datos_usuario else '' }}" readonly>
+                            </div>
+                            <div class="campo">
+                                <label>Correo institucional</label>
+                                <input type="email" value="{{ datos_usuario.email if datos_usuario else '' }}" readonly>
+                            </div>
+                            <div class="campo">
+                                <label>Tipo</label>
+                                <input type="text" value="{{ datos_usuario.tipo if datos_usuario else '' }}" readonly>
+                            </div>
+                            <div class="campo">
+                                <label for="nueva_password">Nueva contraseña</label>
+                                <input type="password" name="nueva_password" placeholder="Ingresa la nueva contraseña" required>
+                            </div>
+                            <div class="campo">
+                                <label for="confirmar_password">Confirmar contraseña</label>
+                                <input type="password" name="confirmar_password" placeholder="Confirma la nueva contraseña" required>
                             </div>
                         </div>
-
-                        <div class="campo">
-                            <label>Observaciones</label>
-                            <textarea name="observaciones"></textarea>
-                        </div>
-
-                        <button type="submit" class="btn-form">Registrar préstamo</button>
+                        <button type="submit" class="btn-form" style="margin-top: 10px;">Cambiar contraseña</button>
                     </form>
-                </div>
+                </section>
             </div>
-        </section>
 
-        <section class="seccion" id="seccion-excel">
-            <h2>Generar Excel</h2>
-            <div class="excel-box">
-                <p>Desde aquí puedes descargar la bitácora de uso general.</p>
-                <a href="{{ url_for('laboratorista.generar_excel') }}" class="btn-excel">Descargar Excel</a>
-            </div>
-        </section>
-
-        <section class="seccion" id="seccionModificarUsuario">
-            <h2>Modificar usuario</h2>
-
-            <form action="{{ url_for('auth.modificar_mi_usuario') }}" method="post" class="form-admin">
-                <div class="grid-form">
-                    <div class="campo">
-                        <label for="matricula_mod">Matrícula</label>
-                        <input type="text" id="matricula_mod"
-                            value="{{ datos_usuario.matricula if datos_usuario else '' }}" readonly>
-                    </div>
-
-                    <div class="campo">
-                        <label for="nombre_mod">Nombre</label>
-                        <input type="text" id="nombre_mod" value="{{ datos_usuario.nombre if datos_usuario else '' }}"
-                            readonly>
-                    </div>
-
-                    <div class="campo">
-                        <label for="ap_paterno_mod">Apellido paterno</label>
-                        <input type="text" id="ap_paterno_mod"
-                            value="{{ datos_usuario.ap_paterno if datos_usuario else '' }}" readonly>
-                    </div>
-
-                    <div class="campo">
-                        <label for="ap_materno_mod">Apellido materno</label>
-                        <input type="text" id="ap_materno_mod"
-                            value="{{ datos_usuario.ap_materno if datos_usuario else '' }}" readonly>
-                    </div>
-
-                    <div class="campo">
-                        <label for="email_mod">Correo institucional</label>
-                        <input type="email" id="email_mod" value="{{ datos_usuario.email if datos_usuario else '' }}"
-                            readonly>
-                    </div>
-
-                    <div class="campo">
-                        <label for="tipo_mod">Tipo</label>
-                        <input type="text" id="tipo_mod" value="{{ datos_usuario.tipo if datos_usuario else '' }}"
-                            readonly>
-                    </div>
-
-                    <div class="campo campo-completo">
-                        <label for="nueva_password">Nueva contraseña</label>
-                        <input type="password" id="nueva_password" name="nueva_password"
-                            placeholder="Ingresa la nueva contraseña" required>
-                    </div>
-
-                    <div class="campo campo-completo">
-                        <label for="confirmar_password">Confirmar nueva contraseña</label>
-                        <input type="password" id="confirmar_password" name="confirmar_password"
-                            placeholder="Confirma la nueva contraseña" required>
-                    </div>
+            <!-- BARRA LATERAL -->
+            <aside class="panel panel-menu" id="sidebarAlumno">
+                <button class="cerrar-sidebar" id="cerrarSidebar">×</button>
+                <h2>Menú Laboratorista</h2>
+                
+                <div class="perfil">
+                    <img src="{{ url_for('static', filename='resources/logo.png') }}" alt="Foto Laboratorista" style="background: white;">
+                    <p>{{ nombre }}</p>
                 </div>
 
-                <div class="acciones">
-                    <button type="submit" class="btn btn-parcial">Cambiar contraseña</button>
+                <div class="menu-opciones">
+                    <button class="btn-menu activo" data-seccion="seccion-dispositivos">Dispositivos en uso</button>
+                    <button class="btn-menu" data-seccion="seccion-registrar">Registrar equipo</button>
+                    <button class="btn-menu" data-seccion="seccion-prestamo">Préstamo por QR</button>
+                    <button class="btn-menu" data-seccion="seccion-excel">Descargar Excel</button>
+                    <button class="btn-menu" data-seccion="seccionModificarUsuario">Modificar Contraseña</button>
+                    <a href="{{ url_for('auth.cerrar_sesion') }}">Cerrar sesión</a>
                 </div>
-            </form>
-        </section>
+            </aside>
+
+        </div>
     </div>
+
+    <div class="overlay-sidebar" id="overlaySidebar"></div>
 
     <script src="{{ url_for('static', filename='assets/JS/alertas.js') }}"></script>
     <script src="{{ url_for('static', filename='assets/JS/lab.js') }}"></script>
+    <script>
+        const btnMenuMovil = document.getElementById("btnMenuMovil");
+        const sidebarAlumno = document.getElementById("sidebarAlumno");
+        const cerrarSidebar = document.getElementById("cerrarSidebar");
+        const overlaySidebar = document.getElementById("overlaySidebar");
+
+        if (btnMenuMovil) btnMenuMovil.addEventListener("click", () => { sidebarAlumno.classList.add("activo"); overlaySidebar.classList.add("activo"); });
+        if (cerrarSidebar) cerrarSidebar.addEventListener("click", () => { sidebarAlumno.classList.remove("activo"); overlaySidebar.classList.remove("activo"); });
+        if (overlaySidebar) overlaySidebar.addEventListener("click", () => { sidebarAlumno.classList.remove("activo"); overlaySidebar.classList.remove("activo"); });
+    </script>
 </body>
 
 </html>

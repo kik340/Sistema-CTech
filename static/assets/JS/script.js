@@ -16,7 +16,6 @@ const btnLogin = document.getElementById("btnLogin")
 const formLogin = panelLogin ? panelLogin.querySelector("form") : null
 const formRegister = panelRegister ? panelRegister.querySelector("form") : null
 
-const tipoSolicitud = document.getElementById("tipo_solicitud")
 const carreraSelect = document.getElementById("carrera_id")
 const motivoInput = document.getElementById("motivo")
 const bloqueMotivo = document.getElementById("bloqueMotivo")
@@ -67,34 +66,6 @@ function ajustarAlturaActual() {
             contenedor.style.height = Math.max(500, alturaLogin) + "px"
         }
     }
-}
-
-/* Muestra los campos correctos en registro según si la solicitud es de alumno o externo. */
-
-function actualizarCamposSolicitud() {
-    if (!tipoSolicitud || !bloqueMotivo || !bloqueCarrera || !carreraSelect || !motivoInput) {
-        return
-    }
-
-    if (tipoSolicitud.value === "externo") {
-        bloqueMotivo.classList.remove("campo-oculto")
-        bloqueCarrera.classList.add("campo-oculto")
-        carreraSelect.value = ""
-        carreraSelect.disabled = true
-        motivoInput.disabled = false
-    } else {
-        bloqueMotivo.classList.add("campo-oculto")
-        bloqueCarrera.classList.remove("campo-oculto")
-        motivoInput.value = ""
-        motivoInput.disabled = true
-        carreraSelect.disabled = false
-    }
-
-    setTimeout(() => {
-        if (vistaActual === "registro") {
-            ajustarAlturaActual()
-        }
-    }, 50)
 }
 
 /* Limpia clases de animación para evitar superposiciones visuales. */
@@ -188,10 +159,6 @@ function inicializarPaneles() {
     }
 }
 
-if (tipoSolicitud) {
-    tipoSolicitud.addEventListener("change", actualizarCamposSolicitud)
-}
-
 if (btnRegistro) {
     btnRegistro.addEventListener("click", mostrarRegistro)
 }
@@ -202,7 +169,6 @@ if (btnLogin) {
 
 window.addEventListener("load", () => {
     vistaActual = "login"
-    actualizarCamposSolicitud()
     mostrarLogin()
 
     const botones = document.querySelectorAll(".btn-ojo")
@@ -238,3 +204,19 @@ window.addEventListener("resize", () => {
         inicializarPaneles()
     }
 })
+
+document.addEventListener('DOMContentLoaded', function() {
+    const btnOlvide = document.getElementById('btnOlvidePassword');
+    const cajaRecuperacion = document.getElementById('cajaRecuperacion');
+
+    if (btnOlvide && cajaRecuperacion) {
+        btnOlvide.addEventListener('click', function(e) {
+            e.preventDefault(); 
+            if (cajaRecuperacion.style.display === 'none') {
+                cajaRecuperacion.style.display = 'block';
+            } else {
+                cajaRecuperacion.style.display = 'none';
+            }
+        });
+    }
+});
