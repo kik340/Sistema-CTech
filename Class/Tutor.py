@@ -483,7 +483,8 @@ class TutorManager:
             grupo = str(datos["grupo"]).strip().upper()
             turno = str(datos["turno"]).strip()
             periodo = str(datos["periodo"]).strip().upper()
-            tutor_matricula = str(datos.get("tutor_matricula", "")).strip() or None
+            tutor_raw = datos.get("tutor_matricula")
+            tutor_matricula = str(tutor_raw).strip() if tutor_raw else None
 
             cursor.execute(
                 """
@@ -806,10 +807,13 @@ class TutorManager:
             conexion.close()
     
     def eliminar_materia(self, materia_id):
-        """Desactiva lógicamente una materia del sistema para preservar el historial."""
+        """Desactiva lógicamente una materia y todos sus grupos asociados."""
         conexion, cursor = obtener_cursor()
         try:
             cursor.execute("UPDATE materias SET activa = 0 WHERE id = %s", (materia_id,))
+            
+            cursor.execute("UPDATE grupos SET activo = 0 WHERE materia_id = %s", (materia_id,))
+            
             conexion.commit()
             return {"status": "ok"}
         except Exception as e:

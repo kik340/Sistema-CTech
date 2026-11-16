@@ -23,11 +23,6 @@ class User:
             conexion.close()
             return True
 
-        cursor.execute("SELECT id FROM externos WHERE matricula=%s", (matricula,))
-        if cursor.fetchone():
-            conexion.close()
-            return True
-
         cursor.execute("SELECT id FROM personal WHERE matricula=%s", (matricula,))
         existe = cursor.fetchone() is not None
 
@@ -38,11 +33,6 @@ class User:
         conexion, cursor = obtener_cursor()
 
         cursor.execute("SELECT id FROM alumnos WHERE email=%s", (email,))
-        if cursor.fetchone():
-            conexion.close()
-            return True
-
-        cursor.execute("SELECT id FROM externos WHERE email=%s", (email,))
         if cursor.fetchone():
             conexion.close()
             return True
@@ -536,25 +526,6 @@ class User:
                         nombre_completo,
                         email,
                         password,
-                        'externo' AS tipo,
-                        NULL AS carrera_id,
-                        activo
-                    FROM externos
-                    WHERE matricula = %s
-                    LIMIT 1
-                """,
-                    (matricula,),
-                )
-                usuario = cursor.fetchone()
-
-            if not usuario:
-                cursor.execute(
-                    """
-                    SELECT
-                        matricula,
-                        nombre_completo,
-                        email,
-                        password,
                         tipo,
                         carrera_id,
                         activo
@@ -1035,7 +1006,7 @@ class User:
             return {"status": "error"}
 
     def obtener_grupos_disponibles_para_alumno(self, matricula):
-        """Devuelve las materias y grupos con un CASE para identificar el estatus de inscripción."""
+        """Devuelve las materias y grupos activos con un CASE para identificar el estatus de inscripción."""
         conexion, cursor = obtener_cursor()
 
         try:
@@ -1069,7 +1040,10 @@ class User:
                 INNER JOIN materias m ON g.materia_id = m.id
                 INNER JOIN carreras c ON g.carrera_id = c.id
                 LEFT JOIN alumnos_grupo ag ON g.id = ag.grupo_id AND ag.alumno_matricula = %s
-                WHERE g.carrera_id = %s AND g.activo = 1 AND g.tutor_matricula IS NOT NULL
+                WHERE g.carrera_id = %s 
+                  AND g.activo = 1 
+                  AND m.activa = 1
+                  AND g.tutor_matricula IS NOT NULL
                 ORDER BY g.semestre ASC, m.nombre ASC
             """,
                 (matricula, carrera_id),
@@ -1168,7 +1142,7 @@ class User:
             tipo = str(tipo).strip().lower()
             password_hash = generate_password_hash(nueva_password)
 
-            if tipo in ["tutor", "maestro", "laboratorista"]:
+            if tipo in ["tutor", "maestro", "laboratorista", "admin"]:
                 cursor.execute(
                     """
                     UPDATE personal

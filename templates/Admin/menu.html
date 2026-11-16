@@ -224,10 +224,10 @@
                                     <label>Rol del Usuario</label>
                                     <select name="tipo" id="resetTipo" required>
                                         <option value="">Selecciona el rol</option>
+                                        <option value="admin">Administrador</option>
                                         <option value="alumno">Alumno</option>
                                         <option value="tutor">Tutor / Maestro</option>
                                         <option value="laboratorista">Laboratorista</option>
-                                        <option value="externo">Externo</option>
                                     </select>
                                 </div>
                                 <div class="campo" style="grid-column: span 2;">
@@ -256,7 +256,7 @@
                     <button class="btn-menu" data-seccion="seccion-gestionar-materias">Eliminar Materias</button>
                     <button class="btn-menu" data-seccion="seccion-grupo">Crear Grupo</button>
                     <button class="btn-menu" data-seccion="seccion-asignar">Asignar Maestro</button>
-                    <button class="btn-menu" data-seccion="seccion-password">Reestablecer Password</button>
+                    <button class="btn-menu" data-seccion="seccion-password">Reestablecer Contraseñas</button>
                     <a href="{{ url_for('auth.cerrar_sesion') }}" class="btn-admin" style="background: transparent; border: 1px solid rgba(0,181,226,0.3); text-align: center; text-decoration: none; display: block;">Cerrar sesión</a>
                 </div>
             </aside>

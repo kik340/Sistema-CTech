@@ -1,7 +1,8 @@
-from flask import Blueprint, render_template, session, redirect, url_for, request
+from flask import Blueprint, render_template, session, redirect, url_for, request, jsonify
 from utils.helpers import login_requerido
 from Class.Tutor import TutorManager
 from db.Conection import obtener_cursor
+from Class.User import User
 
 admin_bp = Blueprint("admin", __name__)
 tutor_manager = TutorManager()
@@ -67,19 +68,18 @@ def asignar_tutor():
     resultado = tutor_manager.asignar_tutor_a_grupo(grupo_id, tutor_matricula)
     return redirect(url_for("admin.menu_admin", r=resultado["status"]))
 
-@admin_bp.route('/admin/eliminar_materia/<int:materia_id>', methods=['POST'])
+@admin_bp.route('/eliminar_materia/<int:materia_id>', methods=['POST'])
 def admin_eliminar_materia(materia_id):
-    if session.get('tipo') != 'admin':
-        return redirect(url_for('login'))
+    if not login_requerido("admin"):
+        return jsonify({"status": "error"})
     
-    tutor_manager = TutorManager()
     resultado = tutor_manager.eliminar_materia(materia_id)
     return jsonify(resultado)
 
-@admin_bp.route('/admin/reestablecer_password', methods=['POST'])
+@admin_bp.route('/reestablecer_password', methods=['POST'])
 def admin_reestablecer_password():
-    if session.get('tipo') != 'admin':
-        return redirect(url_for('login'))
+    if not login_requerido("admin"):
+        return jsonify({"status": "error", "message": "No autorizado"})
     
     matricula = request.form.get('matricula')
     tipo = request.form.get('tipo') 
